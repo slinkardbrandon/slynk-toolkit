@@ -18,8 +18,9 @@ Keeps `git pull` updates live without re-copying:
 ```bash
 git clone https://github.com/slinkardbrandon/slynk-toolkit ~/dev/slynk-toolkit
 mkdir -p ~/.copilot/skills
-ln -s ~/dev/slynk-toolkit/plugins/slynk/skills/spec    ~/.copilot/skills/spec
-ln -s ~/dev/slynk-toolkit/plugins/slynk/skills/handoff ~/.copilot/skills/handoff
+ln -s ~/dev/slynk-toolkit/plugins/slynk/skills/spec      ~/.copilot/skills/spec
+ln -s ~/dev/slynk-toolkit/plugins/slynk/skills/handoff   ~/.copilot/skills/handoff
+ln -s ~/dev/slynk-toolkit/plugins/slynk/skills/create-pr ~/.copilot/skills/create-pr
 ```
 
 Then in `copilot`:
@@ -44,22 +45,35 @@ mkdir $HOME\.copilot\skills\spec
 copy slynk-toolkit\plugins\slynk\skills\spec\* $HOME\.copilot\skills\spec\
 mkdir $HOME\.copilot\skills\handoff
 copy slynk-toolkit\plugins\slynk\skills\handoff\* $HOME\.copilot\skills\handoff\
+mkdir $HOME\.copilot\skills\create-pr
+copy slynk-toolkit\plugins\slynk\skills\create-pr\* $HOME\.copilot\skills\create-pr\
 ```
 
 Re-copy after each `git pull`.
 
 ## Helper-script paths
 
-Claude Code sets `${CLAUDE_PLUGIN_ROOT}` automatically. Copilot has no
-equivalent variable, so when a skill runs a helper script, it resolves the
-script from its own directory (the path shown by `/skills info <name>`). You
-don't need to edit anything — just make sure **Node** is on your `PATH`.
+`spec` and `handoff` ship a Node helper (`create-pr` doesn't). In `SKILL.md`
+those are invoked as `node "${CLAUDE_PLUGIN_ROOT}/skills/<name>/<script>.mjs"`.
 
-## Known issue
+Claude Code sets `${CLAUDE_PLUGIN_ROOT}` automatically. **Copilot has no such
+variable** — it expands to empty, so the literal path is wrong. On Copilot,
+substitute the skill's real directory (the path shown by
+`/skills info <name>`) for `${CLAUDE_PLUGIN_ROOT}/skills/<name>`. For example:
 
-There's an open Copilot CLI bug where relative script paths in `SKILL.md`
-aren't always resolved against the skill's canonical directory when the
-working directory changes
-([copilot-cli#1090](https://github.com/github/copilot-cli/issues/1090)). These
-skills work around it by resolving an absolute path to the script rather than
-relying on a bare `./script.mjs`.
+```bash
+# Claude Code (automatic):
+node "${CLAUDE_PLUGIN_ROOT}/skills/spec/spec-context.mjs"
+
+# Copilot CLI (substitute the dir from `/skills info spec`):
+node ~/.copilot/skills/spec/spec-context.mjs
+```
+
+The agent does this substitution at run time — you don't edit any files. Just
+make sure **Node ≥18** is on your `PATH`.
+
+> Related: an open Copilot CLI issue where relative script paths in `SKILL.md`
+> aren't always resolved against the skill's canonical directory when the
+> working directory changes
+> ([copilot-cli#1090](https://github.com/github/copilot-cli/issues/1090)) —
+> another reason to pass an absolute path, not a bare `./script.mjs`.

@@ -1,12 +1,14 @@
 ---
 name: spec
 description: >-
-  Spec session that stress-tests a plan before building — explores the
-  codebase, asks only the questions the code can't answer (each with a
-  recommendation), and produces a spec doc plus a paste-ready resume prompt.
-  Use when the user wants to spec something out, plan an approach, or
-  "grill"/pressure-test a plan before non-trivial work — e.g. "let's spec
-  this out", "help me plan X", "poke holes in this".
+  Stress-test a plan BEFORE building it: explore the codebase, ask only the
+  questions the code can't answer (each with a recommendation), and produce a
+  structured spec. Use when the user wants to spec something out, plan an
+  approach, or "grill"/pressure-test a plan before non-trivial work, e.g.
+  "let's spec this out", "help me plan X", "poke holes in this". Not for
+  capturing a finished session to continue elsewhere; use the handoff skill
+  for that.
+argument-hint: issue number, owner/repo#n, or a description (optional)
 ---
 
 <what-to-do>
@@ -309,10 +311,17 @@ implementation directly. Skip Phases 5 and 6.
 ### 5a — Write spec artifact
 
 Use the helper script to write the artifact to the configured output
-directory. Pipe the content to stdin:
+directory. Write the content to a scratch file first, then pass it with
+`--content` — piping via `echo` breaks on apostrophes and newlines, which
+prose is full of:
 
 ```bash
-echo '<artifact content>' | node "${CLAUDE_PLUGIN_ROOT}/skills/spec/write-spec-artifact.mjs" --slug "<slug>" --content -
+mkdir -p /tmp/slynk/spec
+cat > /tmp/slynk/spec/artifact.md << 'EOF'
+<artifact content>
+EOF
+node "${CLAUDE_PLUGIN_ROOT}/skills/spec/write-spec-artifact.mjs" --slug "<slug>" --content /tmp/slynk/spec/artifact.md
+rm -f /tmp/slynk/spec/artifact.md
 ```
 
 The slug should be 3-5 words, kebab-case, derived from the issue or topic.

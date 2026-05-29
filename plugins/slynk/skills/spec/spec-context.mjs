@@ -60,16 +60,24 @@ function getRepoRoot() {
 }
 
 function getDefaultBranch() {
+  const opts = { encoding: 'utf8', cwd: repoRoot, stdio: ['pipe', 'pipe', 'pipe'] };
+
+  // Local-first: the remote HEAD ref. No network, no gh, locale-independent.
+  try {
+    const ref = execSync('git symbolic-ref --quiet refs/remotes/origin/HEAD', opts).trim();
+    if (ref) return ref.replace(/^refs\/remotes\/origin\//, '');
+  } catch {
+    // origin/HEAD not set — fall through
+  }
+
+  // Then gh, if available and authed.
   try {
     return execSync(
       'gh repo view --json defaultBranchRef --jq .defaultBranchRef.name',
-      {
-        encoding: 'utf8',
-        cwd: repoRoot,
-      },
+      opts,
     ).trim();
   } catch {
-    return 'master';
+    return 'main';
   }
 }
 
@@ -159,7 +167,11 @@ function readGrillConfig() {
   for (const line of content.split('\n')) {
     const match = line.match(/^(\w+):\s*(.+)$/);
     if (match) {
-      let value = match[2].trim();
+      // Strip inline `# comment` and surrounding quotes from the value.
+      let value = match[2]
+        .replace(/\s+#.*$/, '')
+        .trim()
+        .replace(/^["']|["']$/g, '');
       if (value === 'false') value = false;
       if (value === 'true') value = true;
       config[match[1]] = value;

@@ -1,6 +1,6 @@
 {
   "name": "slynk",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Agent-skills toolkit: spec (stress-test a plan before building), handoff (capture a session for a fresh agent), and create-pr (self-review and open a PR/MR). Skills invoke as slynk:spec, slynk:handoff, and slynk:create-pr.",
   "author": { "name": "Brandon Slinkard", "email": "slinkardbrandon@gmail.com" },
   "homepage": "https://github.com/slinkardbrandon/slynk-toolkit/tree/main/plugins/slynk",

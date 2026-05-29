@@ -11,7 +11,7 @@ An agent-skills toolkit. One plugin, three skills — invoked as `slynk:spec`,
 
 ## Requirements
 
-- **Node** on `PATH` (the `spec` and `handoff` skills ship dependency-free `.mjs` helpers).
+- **Node ≥18** on `PATH` (the `spec` and `handoff` skills ship dependency-free `.mjs` helpers).
 - For `spec`: a GitHub MCP server or the `gh` CLI to auto-fetch issues (optional).
 - For `create-pr`: the `gh` CLI (GitHub) or `glab` CLI (GitLab), authenticated.
 
