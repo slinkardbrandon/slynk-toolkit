@@ -11,16 +11,17 @@ each runtime's actual source/docs, not aspiration.
 | OpenCode       | ⚠️ Partial  | Yes          | Yes (shim)   | No                  |
 | Codex          | ❌ Broken   | No\*\*       | n/a          | No                  |
 
-Helper calls use dual-path resolution: `${CLAUDE_PLUGIN_ROOT}` absolute path when
-set (marketplace), else the `slynk-*` PATH shim (npm/local installer). The shim
-requires the installer's bin dir on PATH — the installer warns if it isn't.
+**Distribution decision:** `npx slynk-toolkit` is the single install path; the Claude marketplace
+is dropped (npx forces node, which our helpers need anyway). Until the npm build lands, helper calls
+use interim dual-path resolution (`${CLAUDE_PLUGIN_ROOT}` absolute path if set, else the `slynk-*`
+PATH shim) so the still-present marketplace path keeps working. Post-npm: plain bare commands. The
+shim requires the installer's bin dir on PATH — the installer warns if it isn't.
 
 ## Claude Code — ✅ Verified
 
-- Skills load via the marketplace plugin (`slynk:spec`) or the local installer
-  (`slynk-spec` in `~/.claude/skills`).
-- Helper calls resolve both ways (env var on marketplace, shim on npm/local).
-- Naming differs by install path: marketplace = `slynk:` namespace, local = `slynk-` prefix.
+- Skills load via the local installer (`slynk-spec` in `~/.claude/skills`); the marketplace plugin
+  path (`slynk:spec`) still works today but is being retired in favor of npx.
+- Helper calls resolve via the interim dual-path; post-npm they become bare `slynk-*` commands.
 
 ## GitHub Copilot — ⚠️ Partial
 

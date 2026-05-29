@@ -23,9 +23,13 @@ order; the real design work happens in dedicated per-item specs.
 
 ## Key Decisions
 
-- **Distribution:** npm installer **and** keep the Claude marketplace. `npx slynk-toolkit`
-  copies/symlinks skill dirs into each agent's skills location; the marketplace stays for the
-  native `claude plugin install` one-liner + auto-update. (Proven by GSD shipping to 15 runtimes.)
+- **Distribution:** `npx slynk-toolkit` is the **single** install path — the Claude marketplace is
+  dropped. npx forces node, which guarantees the `.mjs` helpers/shims always run, and collapses the
+  two-model straddle that broke the marketplace path. Consequences (fold into the npm build, don't
+  churn code now): bare commands everywhere → drop the `${CLAUDE_PLUGIN_ROOT}` dual-path branch;
+  remove `marketplace.json` + `plugin.json`; consider flattening `plugins/slynk/skills/` → `skills/`.
+  Cost: lose `claude plugin update` auto-update (replaced by re-running npx). (Proven by GSD shipping
+  to 15 runtimes, npx-only.)
 - **Bootstrap:** ship the mechanism, default to `suggest`, dialable to `force`. A CC SessionStart
   hook is the "magic" layer on Claude; `AGENTS.md`/instructions carry the nudge on every other agent.
 - **Todo-list convention:** not new infra — it's the built-in `TodoWrite` tool. superpowers gets
@@ -94,12 +98,24 @@ Then, depends on todo-convention + bootstrap:
     is exactly what the lens is not. Mechanical inlining makes the "play with it" soft spot moot.
   - No delete-and-restart absolutism.
 
-### Tier 2 — Missing skills (need mechanisms settled AND existing flavors gathered)
+### Tier 2 — Missing skills
 
-**Prerequisite for both:** collect the user's current flavors off his machines and transcribe
-the real patterns — do not invent. These are reviewer/author-side companions to the existing
+**Prerequisite for pr-review/pr-triage:** collect the user's current flavors off his machines and
+transcribe the real patterns — do not invent. `spec-review` is less blocked: its primary input (the
+`/spec` artifact format) already lives in this repo, and the fan-out triage pattern was exercised in
+this session's five-agent runtime review. These are reviewer/author-side companions to the existing
 `spec`/`handoff`/`create-pr`.
 
+- [ ] **spec-review** → `docs/specs/<date>-spec-review.md` _(not yet written)_
+  - Reviews a `/spec` artifact for **quality**, not intent-fit: inconsistencies, tone, redundancy,
+    wordiness, accuracy, completeness — and surfaces missed concerns. It's the critic to `/spec`'s
+    author; reviews `/spec`'s own output.
+  - Works on the user's specs, other people's specs, or via **agent fan-out** for independent triage
+    (each agent pressure-tests the spec from a different lens, then synthesize — the pattern used in
+    this session's runtime review).
+  - **Distinct from the machine-local `review-spec` skill**, which judges intent-fit (does the design
+    solve the ticket?). This one judges the artifact's quality. Don't conflate — different surface.
+  - Reuses `/spec`'s tone rules (CLAUDE.md: no AI-isms, no em-dashes, concise) as review criteria.
 - [ ] **pr-review fanout** → `docs/specs/<date>-pr-review.md` _(not yet written)_
   - Agent fanout + personas. Consider the two-axis split (does it match spec? vs is it well-built?),
     reported separately so one axis can't mask the other.
@@ -134,24 +150,29 @@ Verified findings from a five-agent review (one per runtime + workflow). See
 `docs/runtime-support.md` for the status matrix. These constrain Tier 2, so settle
 them alongside the mechanism specs.
 
-- [x] **Dual-path helper invocation** — helper calls now resolve via
-      `node "${CLAUDE_PLUGIN_ROOT}/..." 2>/dev/null || slynk-<helper>`. Env var covers the
-      Claude marketplace install (the bare-command refactor had broken it); shim covers
-      npm/local/Copilot. Verified both branches. _(done)_
+- [x] **Dual-path helper invocation** — _interim._ Helper calls resolve via
+      `node "${CLAUDE_PLUGIN_ROOT}/..." 2>/dev/null || slynk-<helper>`, restoring the marketplace
+      path the bare-command refactor broke. **Now superseded:** dropping the marketplace (see Key
+      Decisions) means `${CLAUDE_PLUGIN_ROOT}` never exists, so the npm build simplifies these back
+      to plain bare commands. Leave the dual-path in place until then — it's harmless. _(done, to be simplified)_
+- [ ] **Drop the marketplace** — remove `.claude-plugin/marketplace.json` + `plugins/slynk/.claude-plugin/plugin.json`,
+      simplify dual-path helper calls back to bare commands, update README. Consider flattening
+      `plugins/slynk/skills/` → `skills/`. Part of the npm-distribution spec.
 - [ ] **Codex path fix** — installer targets `~/.codex/skills`, which Codex **ignores**.
       Real path is `~/.agents/skills`. One-line fix in `install-local.mjs`; until then "works
       on Codex" is false. Helper invocation under Codex's sandbox/approval model is unverified.
-- [ ] **Prefix vs name story** — the `slynk-` dir prefix behaves differently per runtime:
-      CC `slynk:` namespace, Copilot requires `name` == dirname (prefix breaks validation),
-      OpenCode keys by frontmatter `name` (prefix cosmetic, no collision protection). Pick one
-      coherent story. Likely belongs in the npm-distribution spec.
-- [ ] **PATH reliability** — shims land in `~/.local/bin` (often not on PATH) or the npm prefix;
-      installer only warns. The agent's exec shell may not inherit interactive PATH. Decide:
-      fix PATH, or prefer the env-var/absolute path where available.
-- [ ] **Doc drift** — README + `docs/copilot-setup.md` still describe the old
-      `${CLAUDE_PLUGIN_ROOT}`-only / absolute-path model; `copilot-setup.md` omits `create-pr`
-      and references a now-closed bug. Add an OpenCode install section. Drop/relocate
-      `argument-hint` (Claude-only) from handoff frontmatter.
+- [ ] **Prefix vs name story** — `slynk-` dir prefix behaves differently per runtime. With the
+      marketplace gone the CC `slynk:` namespace is moot; remaining tension is Copilot (requires
+      `name` == dirname, so prefix breaks validation) vs OpenCode (keys by frontmatter `name`, prefix
+      cosmetic). Pick one coherent story in the npm-distribution spec.
+- [ ] **PATH reliability** — the real remaining distribution work. Shims land in `~/.local/bin`
+      (often not on PATH) or the npm prefix; installer only warns, and the agent's exec shell may not
+      inherit interactive PATH. With no marketplace/env-var fallback, getting shims reliably on PATH
+      is load-bearing. npm global bin-link handles the global-install case; solve the local case too.
+- [ ] **Doc drift** — README + `docs/copilot-setup.md` describe the old `${CLAUDE_PLUGIN_ROOT}` /
+      marketplace model. Rewrite for npx-only. Add an OpenCode install section. `copilot-setup.md`
+      omits `create-pr` and references a now-closed bug. Drop/relocate `argument-hint` (Claude-only)
+      from handoff frontmatter.
 - [ ] **`handoff-context.mjs` skill scan** — scans `~/.agents/skills` but installer writes Codex
       to `~/.codex/skills` and OpenCode to `~/.config/opencode/skills`; scan dirs ≠ install dirs,
       so "Suggested Skills" is partly dead. Also misses marketplace installs (plugin cache, not
