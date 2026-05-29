@@ -49,15 +49,16 @@ Run the helper to collect repo metadata, convention files, spec
 history, and config in one shot:
 
 ```bash
-slynk-spec-context
+node "${CLAUDE_PLUGIN_ROOT}/skills/spec/spec-context.mjs" 2>/dev/null || slynk-spec-context
 ```
 
-> This is a PATH command installed alongside the skills (via `npx` bin-linking
-> or the local installer). It works the same on Claude Code, Copilot CLI, and
-> Codex — no path or env var to set. If the command isn't found, the toolkit
-> wasn't installed via npm/npx; run `npm run install:local` from the clone, or
-> fall back to `node <skill-dir>/spec-context.mjs`. The other helper below
-> (`slynk-write-spec-artifact`) works the same way.
+> Two ways this resolves, in order: on a Claude Code **marketplace** install,
+> `${CLAUDE_PLUGIN_ROOT}` is set and points at the plugin — the absolute path
+> runs with no PATH dependency. Everywhere else (npm/npx install, the local
+> installer, Copilot), `${CLAUDE_PLUGIN_ROOT}` is empty so the first command
+> no-ops and the bare `slynk-spec-context` shim runs from PATH. If neither
+> resolves, the toolkit isn't installed — run `npm run install:local` from the
+> clone. The other helper (`slynk-write-spec-artifact`) uses the same pattern.
 
 This outputs a JSON blob containing:
 
@@ -320,14 +321,14 @@ implementation directly. Skip Phases 5 and 6.
 
 ### 5a — Write spec artifact
 
-Use the helper script to write the artifact to the configured output
-directory. Pipe the content to stdin:
-
-Write the artifact content to a scratch file first (piping via `echo '...'`
-breaks on apostrophes), then pass it:
+Use the helper to write the artifact to the configured output directory. Write
+the content to a scratch file first (piping via `echo '...'` breaks on
+apostrophes), then pass it. Same dual-path resolution as the Phase 0a helper:
 
 ```bash
-slynk-write-spec-artifact --slug "<slug>" --content /path/to/scratch.md
+WRITE="slynk-write-spec-artifact"
+[ -n "${CLAUDE_PLUGIN_ROOT}" ] && WRITE="node ${CLAUDE_PLUGIN_ROOT}/skills/spec/write-spec-artifact.mjs"
+$WRITE --slug "<slug>" --content /path/to/scratch.md
 ```
 
 The slug should be 3-5 words, kebab-case, derived from the issue or topic.

@@ -71,6 +71,10 @@ These three are **independent of each other** and can be specced in parallel:
   - `.slynk.yml` `bootstrap: suggest | force | off`, default `suggest`.
   - Open questions: exact preamble wording per mode; how `force` language reads without superpowers'
     persuasion-table heaviness; per-agent delivery (hook vs AGENTS.md vs instructions files).
+  - **Workflow review steer:** `force` is the highest ceremony risk and has no natural trigger
+    (set-once-and-forget; nags on unrelated sessions). Keep `suggest`/`off` as the real product;
+    treat `force` as a de-emphasized escape hatch, and scope its language to skill-relevance, not a
+    blanket "you MUST check skills" on every session start.
 - [ ] **todo-list convention** → `docs/specs/<date>-todo-convention.md` _(not yet written)_
   - Shared convention: skills with checklists instruct the agent to create a `TodoWrite` task per item.
   - Open questions: where the convention lives (shared reference? per-skill?); graceful degradation to
@@ -80,10 +84,15 @@ Then, depends on todo-convention + bootstrap:
 
 - [ ] **/tdd mindset lens + /spec wiring** → `docs/specs/<date>-tdd-lens.md` _(not yet written)_
   - `/tdd`: short standalone reference — real behaviors not coverage; fail-first bug→repro-test→fix.
-  - `/spec`: add explicit work classification; **bug/feature → invoke `/tdd`** to shape Test Cases;
+  - `/spec`: add explicit work classification; **bug/feature → use `/tdd`** to shape Test Cases;
     **chore/config/ticket-only → skip**.
-  - Known soft spot: making the conditional invoke _reliable_ (not vibes). Flag as "play with it,"
-    not solved. No delete-and-restart absolutism.
+  - **Workflow review steer:** classification should **swap** spec's existing Phase 2 test-nudge,
+    not layer on top — bug/feature pulls the tdd lens text into that one block, chore/ticket drops
+    it. Don't run two test-thinking passes.
+  - **Lens not executor:** inline the lens _content_ into spec's test step rather than a
+    skill-to-skill invoke — a real `/tdd` invocation tempts the agent to start writing tests, which
+    is exactly what the lens is not. Mechanical inlining makes the "play with it" soft spot moot.
+  - No delete-and-restart absolutism.
 
 ### Tier 2 — Missing skills (need mechanisms settled AND existing flavors gathered)
 
@@ -94,13 +103,67 @@ the real patterns — do not invent. These are reviewer/author-side companions t
 - [ ] **pr-review fanout** → `docs/specs/<date>-pr-review.md` _(not yet written)_
   - Agent fanout + personas. Consider the two-axis split (does it match spec? vs is it well-built?),
     reported separately so one axis can't mask the other.
+  - **Workflow steer:** the "matches spec" axis needs the originating spec — make pr-review look up
+    the spec in `docs/specs/` to close the loop with `/spec`'s artifact.
 - [ ] **pr-triage** → `docs/specs/<date>-pr-triage.md` _(not yet written)_
   - Review and address incoming PR feedback — automatically vs talk-through mode.
+  - **Workflow steer:** "automatically" mode must still surface what it changed (mirror create-pr's
+    show-what-was-fixed).
+
+### Tier 2.5 — Existing-skill polish (from workflow review)
+
+Normalize **before** pr-review/pr-triage get specced, so new skills don't copy current
+inconsistencies.
+
+- [ ] **Close the spec→create-pr loop** — `/spec`'s resume prompt never tells the implementing
+      session to run `/create-pr`. Add a forward-reference + test/verify expectations (mirror
+      handoff's "Suggested Skills" section). Highest-value / lowest-effort loop fix.
+- [ ] **`/spec` "just start implementing" writes no artifact** — contradicts Rule 8 ("the spec doc
+      is the artifact"). Either write the artifact first on that branch, or state plainly no doc is saved.
+- [ ] **Trim spec's trailing prompts** — Phase 5c duplicates Phase 4's menu; fold the redundant
+      options and make the Phase 6 glossary offer a single line, not a framed prompt.
+- [ ] **Cross-skill UX consistency** — add "Cancel" to spec's menus (create-pr has it, spec doesn't);
+      one shared resume-prompt template between spec and handoff; consistent exit-ramp vocabulary.
+- [ ] **Spec lifecycle/status** — `specHistory` resurfaces completed specs as if pending. A cheap
+      `> Status: implemented in <PR>` append (from create-pr) would keep the history meaningful.
+- [ ] **Cosmetic:** spec/SKILL.md still says "grilling" in ~4 places though the skill is named `spec`.
+
+### Tier 1.5 — Distribution hardening (from per-runtime review, 2026-05-29)
+
+Verified findings from a five-agent review (one per runtime + workflow). See
+`docs/runtime-support.md` for the status matrix. These constrain Tier 2, so settle
+them alongside the mechanism specs.
+
+- [x] **Dual-path helper invocation** — helper calls now resolve via
+      `node "${CLAUDE_PLUGIN_ROOT}/..." 2>/dev/null || slynk-<helper>`. Env var covers the
+      Claude marketplace install (the bare-command refactor had broken it); shim covers
+      npm/local/Copilot. Verified both branches. _(done)_
+- [ ] **Codex path fix** — installer targets `~/.codex/skills`, which Codex **ignores**.
+      Real path is `~/.agents/skills`. One-line fix in `install-local.mjs`; until then "works
+      on Codex" is false. Helper invocation under Codex's sandbox/approval model is unverified.
+- [ ] **Prefix vs name story** — the `slynk-` dir prefix behaves differently per runtime:
+      CC `slynk:` namespace, Copilot requires `name` == dirname (prefix breaks validation),
+      OpenCode keys by frontmatter `name` (prefix cosmetic, no collision protection). Pick one
+      coherent story. Likely belongs in the npm-distribution spec.
+- [ ] **PATH reliability** — shims land in `~/.local/bin` (often not on PATH) or the npm prefix;
+      installer only warns. The agent's exec shell may not inherit interactive PATH. Decide:
+      fix PATH, or prefer the env-var/absolute path where available.
+- [ ] **Doc drift** — README + `docs/copilot-setup.md` still describe the old
+      `${CLAUDE_PLUGIN_ROOT}`-only / absolute-path model; `copilot-setup.md` omits `create-pr`
+      and references a now-closed bug. Add an OpenCode install section. Drop/relocate
+      `argument-hint` (Claude-only) from handoff frontmatter.
+- [ ] **`handoff-context.mjs` skill scan** — scans `~/.agents/skills` but installer writes Codex
+      to `~/.codex/skills` and OpenCode to `~/.config/opencode/skills`; scan dirs ≠ install dirs,
+      so "Suggested Skills" is partly dead. Also misses marketplace installs (plugin cache, not
+      `~/.claude/skills`).
 
 ### Tier 3 — Cleanup
 
-- [ ] **grill→spec naming leftover** — `spec-context.mjs` still has `getRecentGrillDocs` /
-      `readGrillConfig` from before the rename. (May already be addressed in PR #1 — verify.)
+- [x] **grill→spec naming leftover** — renamed `getRecentGrillDocs`→`getRecentSpecDocs` and
+      `readGrillConfig`→`readSpecConfig` in `spec-context.mjs`. _(done)_
+- [x] **npm distribution (local path)** — local installer (`scripts/install-local.mjs`) +
+      `package.json` bin entries + Prettier/ESLint/CI shipped. npx-from-registry publish still
+      pending its own spec. _(partial — local path done)_
 - [ ] **Merge PR #1 hardening** — BSD grep `\s` secrets-scan bug, dash-incompatible bash arrays,
       apostrophe-breaking spec-write (`echo '…' | node`), `/tmp/slynk/` scratch namespacing, `master→main`
       fallback, CHANGELOG, version bump. This is the production-grade portability pass; merge before

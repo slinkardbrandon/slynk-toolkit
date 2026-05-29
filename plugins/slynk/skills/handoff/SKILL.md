@@ -18,13 +18,14 @@ squashing what you're doing.
 Run the helper to collect git state and the OS temp dir:
 
 ```bash
-slynk-handoff-context
+node "${CLAUDE_PLUGIN_ROOT}/skills/handoff/handoff-context.mjs" 2>/dev/null || slynk-handoff-context
 ```
 
-> This is a PATH command installed alongside the skills (via `npx` bin-linking
-> or the local installer). Works the same on Claude Code, Copilot CLI, and
-> Codex — no path or env var to set. If not found, run `npm run install:local`
-> from the clone, or fall back to `node <skill-dir>/handoff-context.mjs`.
+> Two ways this resolves, in order: on a Claude Code **marketplace** install,
+> `${CLAUDE_PLUGIN_ROOT}` is set and the absolute path runs with no PATH
+> dependency. Everywhere else (npm/npx, the local installer, Copilot), it's
+> empty so the first command no-ops and the bare `slynk-handoff-context` shim
+> runs from PATH. If neither resolves, run `npm run install:local` from the clone.
 
 `git` is null when you're not in a repo, and it may carry no signal for a pure
 planning session — that's expected. See the shapes in Step 2.
