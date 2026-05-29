@@ -1,0 +1,19 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "slynk-toolkit",
+  "description": "Generic, reusable agent skills that empower an engineering workflow. Works with Claude Code and GitHub Copilot CLI.",
+  "owner": {
+    "name": "Brandon Slinkard",
+    "email": "slinkardbrandon@gmail.com"
+  },
+  "plugins": [
+    {
+      "name": "slynk",
+      "description": "Agent-skills toolkit: spec (stress-test a plan before building), handoff (capture a session for a fresh agent), and create-pr (self-review and open a PR/MR). Skills invoke as slynk:spec, slynk:handoff, and slynk:create-pr.",
+      "author": { "name": "Brandon Slinkard" },
+      "category": "development",
+      "source": "./plugins/slynk",
+      "homepage": "https://github.com/slinkardbrandon/slynk-toolkit/tree/main/plugins/slynk"
+    }
+  ]
+}
