@@ -1,0 +1,32 @@
+{
+  "name": "slynk-toolkit",
+  "version": "1.0.0",
+  "description": "Reusable, cross-agent engineering skills driven by one SKILL.md per skill.",
+  "type": "module",
+  "license": "MIT",
+  "author": {
+    "name": "Brandon Slinkard",
+    "email": "slinkardbrandon@gmail.com"
+  },
+  "repository": "https://github.com/slinkardbrandon/slynk-toolkit",
+  "bin": {
+    "slynk-spec-context": "plugins/slynk/bin/slynk-spec-context.mjs",
+    "slynk-write-spec-artifact": "plugins/slynk/bin/slynk-write-spec-artifact.mjs",
+    "slynk-handoff-context": "plugins/slynk/bin/slynk-handoff-context.mjs"
+  },
+  "scripts": {
+    "install:local": "node scripts/install-local.mjs",
+    "install:local:copy": "node scripts/install-local.mjs --copy",
+    "uninstall:local": "node scripts/install-local.mjs --uninstall",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
+  },
+  "devDependencies": {
+    "eslint": "^10.4.0",
+    "eslint-plugin-security": "^4.0.0",
+    "eslint-plugin-unicorn": "^64.0.0",
+    "prettier": "^3.8.3"
+  }
+}

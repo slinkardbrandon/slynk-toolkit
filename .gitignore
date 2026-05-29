@@ -4,7 +4,7 @@
 .idea/
 .vscode/
 
-# Node (helper scripts are dependency-free, but just in case)
+# Node — shipped helpers are dependency-free; devDeps (lint/format) live here
 node_modules/
 npm-debug.log*
 

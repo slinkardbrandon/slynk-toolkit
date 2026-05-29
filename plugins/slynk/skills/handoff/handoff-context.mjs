@@ -6,19 +6,19 @@
  * Usage: node handoff-context.mjs [--repo /path/to/repo]
  */
 
-import fs from 'node:fs';
-import path from 'node:path';
-import os from 'node:os';
-import { execSync } from 'node:child_process';
+import fs from "node:fs";
+import path from "node:path";
+import os from "node:os";
+import { execSync } from "node:child_process";
 
 const now = new Date();
-const pad = (num) => String(num).padStart(2, '0');
+const pad = (number_) => String(number_).padStart(2, "0");
 const date = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 const time = `${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
 
 const result = {
   tmpDir: os.tmpdir(),
-  handoffDir: path.join(os.tmpdir(), 'handoff'),
+  handoffDir: path.join(os.tmpdir(), "handoff"),
   date,
   timestamp: `${date}-${time}`,
   git: getGitContext(),
@@ -28,48 +28,48 @@ const result = {
 console.log(JSON.stringify(result, null, 2));
 
 function getGitContext() {
-  const argIdx = process.argv.indexOf('--repo');
+  const argumentIndex = process.argv.indexOf("--repo");
   const cwd =
-    argIdx !== -1 && process.argv[argIdx + 1]
-      ? path.resolve(process.argv[argIdx + 1])
+    argumentIndex !== -1 && process.argv[argumentIndex + 1]
+      ? path.resolve(process.argv[argumentIndex + 1])
       : undefined;
 
-  const opts = { encoding: 'utf8', cwd, stdio: ['pipe', 'pipe', 'pipe'] };
+  const options = { encoding: "utf8", cwd, stdio: ["pipe", "pipe", "pipe"] };
 
   let root;
   try {
-    root = execSync('git rev-parse --show-toplevel', opts).trim();
+    root = execSync("git rev-parse --show-toplevel", options).trim();
   } catch {
     return null;
   }
 
   const run = (cmd) => {
     try {
-      return execSync(cmd, { ...opts, cwd: root }).trim();
+      return execSync(cmd, { ...options, cwd: root }).trim();
     } catch {
-      return '';
+      return "";
     }
   };
 
   return {
     root,
     repoName: path.basename(root),
-    branch: run('git branch --show-current'),
-    lastCommits: run('git log --oneline -10').split('\n').filter(Boolean),
-    status: run('git status --short').split('\n').filter(Boolean),
-    changedFiles: run('git diff --name-only HEAD').split('\n').filter(Boolean),
+    branch: run("git branch --show-current"),
+    lastCommits: run("git log --oneline -10").split("\n").filter(Boolean),
+    status: run("git status --short").split("\n").filter(Boolean),
+    changedFiles: run("git diff --name-only HEAD").split("\n").filter(Boolean),
   };
 }
 
 function getInstalledSkills() {
   // Union skill names across the dirs Claude Code and Copilot CLI discover.
-  const dirs = [
-    path.join(os.homedir(), '.claude', 'skills'),
-    path.join(os.homedir(), '.copilot', 'skills'),
-    path.join(os.homedir(), '.agents', 'skills'),
+  const directories = [
+    path.join(os.homedir(), ".claude", "skills"),
+    path.join(os.homedir(), ".copilot", "skills"),
+    path.join(os.homedir(), ".agents", "skills"),
   ];
   const names = new Set();
-  for (const dir of dirs) {
+  for (const dir of directories) {
     try {
       for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
         if (entry.isDirectory() || entry.isSymbolicLink()) names.add(entry.name);

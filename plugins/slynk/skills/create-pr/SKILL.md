@@ -29,14 +29,14 @@ and opens a pull request (GitHub) or merge request (GitLab).
 
 Detect the platform once (Step 0) and use the matching column everywhere:
 
-| Operation | GitHub (`gh`) | GitLab (`glab`) |
-|---|---|---|
-| Auth check | `gh auth status` | `glab auth status` |
-| Current user | `gh api user --jq .login` | `glab api user --jq .username` |
-| CI config | `.github/workflows/*.{yml,yaml}` | `.gitlab-ci.yml` (+ `include:`d files) |
-| PR template | `.github/pull_request_template.md` / `.github/PULL_REQUEST_TEMPLATE.md` / `.github/PULL_REQUEST_TEMPLATE/` | `.gitlab/merge_request_templates/*.md` |
-| Create | `gh pr create` | `glab mr create` |
-| Reviewers | auto via CODEOWNERS | auto via `CODEOWNERS` (Premium) — don't assign manually |
+| Operation    | GitHub (`gh`)                                                                                              | GitLab (`glab`)                                         |
+| ------------ | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| Auth check   | `gh auth status`                                                                                           | `glab auth status`                                      |
+| Current user | `gh api user --jq .login`                                                                                  | `glab api user --jq .username`                          |
+| CI config    | `.github/workflows/*.{yml,yaml}`                                                                           | `.gitlab-ci.yml` (+ `include:`d files)                  |
+| PR template  | `.github/pull_request_template.md` / `.github/PULL_REQUEST_TEMPLATE.md` / `.github/PULL_REQUEST_TEMPLATE/` | `.gitlab/merge_request_templates/*.md`                  |
+| Create       | `gh pr create`                                                                                             | `glab mr create`                                        |
+| Reviewers    | auto via CODEOWNERS                                                                                        | auto via `CODEOWNERS` (Premium) — don't assign manually |
 
 Default branch detection is platform-neutral:
 
@@ -48,7 +48,7 @@ git remote show origin | sed -n '/HEAD branch/s/.*: //p'
 
 Optionally provide a base branch after invoking this skill:
 
-- *(no argument)* — infers the base branch automatically
+- _(no argument)_ — infers the base branch automatically
 - `main` — explicitly sets the base branch
 
 ## Workflow
@@ -146,6 +146,7 @@ Untracked:
 ```
 
 Choices:
+
 - **Commit all** — `git add -A` and commit with an auto-generated message derived from the branch name/ticket, e.g. `feat: add widget` — user can edit before confirming
 - **Choose what to include** — interactively ask per file/group: include or exclude. Stage the included files and commit. Excluded files stay in the working tree (unstaged), untouched.
 - **Stash and ignore** — `git stash` to set aside all changes, continue with only committed work. Remind the user to `git stash pop` afterwards.
@@ -234,11 +235,11 @@ Parse the current branch name into a PR title:
 
 **Examples:**
 
-| Branch | Generated Title |
-|---|---|
-| `feat/add-widget` | `feat: add widget` |
-| `fix/null-deref-in-cart` | `fix: null deref in cart` |
-| `feat/ABC-123-new-flow` | `feat: ABC-123 - new flow` |
+| Branch                      | Generated Title              |
+| --------------------------- | ---------------------------- |
+| `feat/add-widget`           | `feat: add widget`           |
+| `fix/null-deref-in-cart`    | `fix: null deref in cart`    |
+| `feat/ABC-123-new-flow`     | `feat: ABC-123 - new flow`   |
 | `chore/update-dependencies` | `chore: update dependencies` |
 
 If the branch name doesn't match (e.g. no `/`), ask:
@@ -263,6 +264,7 @@ If flagged, offer:
 > "Some commits look like work-in-progress. Want me to interactively rebase to clean them up before opening the PR?"
 
 Choices:
+
 - **Clean them up** — `git rebase -i origin/<base>`
 - **Leave them as-is** — continue
 
@@ -275,11 +277,13 @@ Scan the diff for committed secrets before any review or push.
 **Try in order:**
 
 1. **`gitleaks`** (if installed):
+
    ```bash
    git diff origin/<base>...HEAD | gitleaks detect --pipe --no-banner
    ```
 
 2. **Pattern grep fallback:**
+
    ```bash
    git diff origin/<base>...HEAD | grep -iE 'password\s*[:=]\s*["'"'"'][^"'"'"']{6,}|secret\s*[:=]\s*["'"'"'][^"'"'"']{6,}|api[_-]?key\s*[:=]\s*["'"'"'][^"'"'"']{10,}|token\s*[:=]\s*["'"'"'][^"'"'"']{10,}|BEGIN (RSA |EC |DSA |OPENSSH )?PRIVATE KEY|AKIA[0-9A-Z]{16}'
    ```
@@ -303,12 +307,14 @@ Do not proceed until the user confirms false positives or resolves them.
 Review the diff for **logic and correctness only** — this is your own code, so the review is constructive, not adversarial. Catch anything you'd be embarrassed to have a teammate point out later.
 
 > **Scope:** Logic and correctness, not style.
+>
 > - ❌ **Do NOT flag** whitespace, indentation, quote style, semicolons, import ordering, or anything a linter/formatter would catch automatically.
 > - ✅ **Do flag** logic, correctness, security, type safety, and architectural concerns.
 
 Identify findings across three severities:
 
 **🔴 Critical (must fix before merging)**
+
 - Bugs / logic errors — wrong conditions, off-by-one, null/undefined dereferences, wrong branching
 - Security — injection, broken auth/authz (IDOR, privilege escalation), hardcoded secrets or PII in logs/responses, non-constant-time secret comparisons, unsafe deserialization, missing rate limiting/input-size limits on public endpoints
 - Breaking changes — removed exports, changed public signatures, incompatible type changes
@@ -316,6 +322,7 @@ Identify findings across three severities:
 - Unsafe TypeScript (TS repos) — `any`, unchecked `as` assertions, missing return types on exported functions, `@ts-ignore`/`@ts-expect-error` without justification
 
 **🟡 Important (should address)**
+
 - Missing tests — new logic paths, edge cases, error branches without coverage
 - Error-handling gaps — unhandled rejections, missing catch blocks, swallowed errors
 - Logic inconsistency — behavior contradicting the PR intent or related code
@@ -324,6 +331,7 @@ Identify findings across three severities:
 - Weak TypeScript — overly broad unions, missing `readonly`, incorrect/missing generics
 
 **🔵 Suggestions (nice to have)**
+
 - Readability, minor DRY, naming inconsistent with patterns used elsewhere
 
 Compile findings grouped by severity. Reference exact file paths and line numbers. Write each finding the way a thoughtful teammate would — short, direct, often phrased as a question ("Should this fail closed if `address` is missing?"). No severity labels in the finding body, no AI-sounding preambles.
@@ -333,6 +341,7 @@ After displaying the review, ask:
 > "Found [N critical / M important / K suggestions]. Fix these automatically, or skip straight to running the checks?"
 
 Choices:
+
 - **Fix automatically** — apply fixes, then continue (below)
 - **Skip fixes** — continue to checks without modifying code
 - **Cancel** — stop
@@ -361,7 +370,7 @@ Don't assume `npm run build/lint/test`. Derive the exact checks this repo gates 
    scripts, `pyproject.toml`/`tox.ini`, etc.
 
 2. **Read the CI config** (fetched in Step 1) — this is the source of truth for
-   what *must* pass:
+   what _must_ pass:
    - **GitHub:** for each `.github/workflows/*.{yml,yaml}` triggered by
      `pull_request` / `merge_group` / `push`, extract every `run:` command.
    - **GitLab:** for `.gitlab-ci.yml` (and `include:`d files), extract each
@@ -443,6 +452,7 @@ Show all results together once every job finishes — don't interrupt mid-run:
 > "`<check>` failed. Fix the issues and re-run, or skip this check and continue?"
 
 Choices:
+
 - **Fix and re-run** — auto-fix if straightforward (e.g. re-run the lint script with `--fix`), then re-run **only that check**
 - **Skip this check** — continue (note in the PR description that this check was skipped)
 - **Cancel** — stop
@@ -472,13 +482,13 @@ node -e "const p=require('$REPO_ROOT/package.json'); console.log(!!p.scripts?.['
 
 Infer a change type from the branch prefix:
 
-| Branch prefix | Default |
-|---|---|
-| `feat/` | `minor` |
-| `fix/` | `patch` |
-| `chore/`, `docs/`, `ci/`, `refactor/` | `none` |
+| Branch prefix                                      | Default |
+| -------------------------------------------------- | ------- |
+| `feat/`                                            | `minor` |
+| `fix/`                                             | `patch` |
+| `chore/`, `docs/`, `ci/`, `refactor/`              | `none`  |
 | `breaking/` or description implies breaking change | `major` |
-| Anything else | `patch` |
+| Anything else                                      | `patch` |
 
 Ask the user to confirm, inferred type first (marked Recommended): `patch`, `minor`, `major`, `none`.
 
@@ -536,6 +546,7 @@ Combine:
 ```
 
 **If a ticket/issue reference is present,** add a link, sourced in this order:
+
 1. PR template has a ticket/issue field → fill using the template's link pattern.
 2. Branch/commit references a platform issue (`#123`) → link it (`Closes #123`).
 3. Branch has a ticket key (`ABC-123`) and the template shows an issue-tracker URL pattern → follow that pattern.
@@ -545,15 +556,15 @@ Combine:
 
 **Notable Changes — what qualifies:**
 
-| ✅ Include | ❌ Exclude |
-|---|---|
-| New API endpoints or function signatures | Added/updated tests |
-| Changed business logic or calculation | Lint fixes or formatting |
-| New configuration options | Internal variable renames |
-| New UI components or screens | Build script changes |
-| New integrations or external dependencies | CI/CD pipeline tweaks |
-| Removed or deprecated functionality | Minor code cleanup |
-| Performance changes with observable impact | Comment-only changes |
+| ✅ Include                                 | ❌ Exclude                |
+| ------------------------------------------ | ------------------------- |
+| New API endpoints or function signatures   | Added/updated tests       |
+| Changed business logic or calculation      | Lint fixes or formatting  |
+| New configuration options                  | Internal variable renames |
+| New UI components or screens               | Build script changes      |
+| New integrations or external dependencies  | CI/CD pipeline tweaks     |
+| Removed or deprecated functionality        | Minor code cleanup        |
+| Performance changes with observable impact | Comment-only changes      |
 
 ---
 
@@ -573,6 +584,7 @@ Ask:
 > "Ready to open the PR?"
 
 Choices:
+
 - **Open as ready for review** — create in ready state
 - **Open as draft** — create in draft state
 - **Edit the description first** — take changes, regenerate, ask again

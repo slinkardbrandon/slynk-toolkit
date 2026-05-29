@@ -18,13 +18,13 @@ squashing what you're doing.
 Run the helper to collect git state and the OS temp dir:
 
 ```bash
-node "${CLAUDE_PLUGIN_ROOT}/skills/handoff/handoff-context.mjs"
+slynk-handoff-context
 ```
 
-> Path resolution: on Claude Code, `${CLAUDE_PLUGIN_ROOT}` is set
-> automatically to this plugin's install path. On GitHub Copilot CLI there
-> is no such variable — run the script from this skill's own directory (the
-> path shown by `/skills info handoff`). Node must be on PATH either way.
+> This is a PATH command installed alongside the skills (via `npx` bin-linking
+> or the local installer). Works the same on Claude Code, Copilot CLI, and
+> Codex — no path or env var to set. If not found, run `npm run install:local`
+> from the clone, or fall back to `node <skill-dir>/handoff-context.mjs`.
 
 `git` is null when you're not in a repo, and it may carry no signal for a pure
 planning session — that's expected. See the shapes in Step 2.
@@ -66,7 +66,7 @@ Include the sections that carry signal; omit the rest.
 # Handoff: <short topic>
 
 > Session: YYYY-MM-DD
-> Code: <repo> · <branch>   —or—   Planning: <tickets / docs / diagram / discussion>
+> Code: <repo> · <branch> —or— Planning: <tickets / docs / diagram / discussion>
 
 ## Summary
 
@@ -75,10 +75,12 @@ Include the sections that carry signal; omit the rest.
 ## Where Things Stand
 
 Code handoff:
+
 - **Branch:** `<branch>` · **Working tree:** <clean / N uncommitted> · **Last commit:** `<SHA>` <msg>
 - <what's done vs. mid-flight across the parallel threads>
 
 Planning handoff:
+
 - **Done / drafted:** <what's fully worked out — tickets specced, sections written, decisions locked>
 - **Pending:** <what's still open — stubs, unanswered questions, untouched parts>
 - **Where it lands:** <where the outputs go — issue tracker, doc path, etc.>

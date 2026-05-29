@@ -13,74 +13,74 @@
  * This saves the agent from manually doing mkdir + file creation + path resolution.
  */
 
-import fs from 'node:fs';
-import path from 'node:path';
-import { execSync } from 'node:child_process';
+import fs from "node:fs";
+import path from "node:path";
+import { execSync } from "node:child_process";
 
 const args = process.argv.slice(2);
-const slugIdx = args.indexOf('--slug');
-const contentIdx = args.indexOf('--content');
+const slugIndex = args.indexOf("--slug");
+const contentIndex = args.indexOf("--content");
 
-if (slugIdx === -1 || !args[slugIdx + 1]) {
-  console.error(JSON.stringify({ error: 'Missing --slug argument' }));
+if (slugIndex === -1 || !args[slugIndex + 1]) {
+  console.error(JSON.stringify({ error: "Missing --slug argument" }));
   process.exit(1);
 }
 
-const slug = args[slugIdx + 1];
-const contentSource = contentIdx === -1 ? '-' : args[contentIdx + 1];
+const slug = args[slugIndex + 1];
+const contentSource = contentIndex === -1 ? "-" : args[contentIndex + 1];
 
 // Get repo root
 let repoRoot;
 try {
-  repoRoot = execSync('git rev-parse --show-toplevel', {
-    encoding: 'utf8',
+  repoRoot = execSync("git rev-parse --show-toplevel", {
+    encoding: "utf8",
   }).trim();
 } catch {
-  console.error(JSON.stringify({ error: 'Not inside a git repository' }));
+  console.error(JSON.stringify({ error: "Not inside a git repository" }));
   process.exit(1);
 }
 
 // Read spec config
-const configPath = path.join(repoRoot, '.spec.yml');
-let outputDir = 'docs/specs';
+const configPath = path.join(repoRoot, ".spec.yml");
+let outputDir = "docs/specs";
 if (fs.existsSync(configPath)) {
-  const configContent = fs.readFileSync(configPath, 'utf8');
+  const configContent = fs.readFileSync(configPath, "utf8");
   const match = configContent.match(/^output_dir:\s*(.+)$/m);
   if (match) outputDir = match[1].trim();
 }
 
 // Build filename
-const date = new Date().toISOString().split('T')[0];
+const date = new Date().toISOString().split("T")[0];
 const filename = `${date}-${slug}.md`;
 const fullDir = path.join(repoRoot, outputDir);
 const fullPath = path.join(fullDir, filename);
-const relPath = path.join(outputDir, filename);
+const relativePath = path.join(outputDir, filename);
 
 // Read content
 let content;
-if (contentSource === '-') content = fs.readFileSync(0, 'utf8');
-else content = fs.readFileSync(contentSource, 'utf8');
+content =
+  contentSource === "-" ? fs.readFileSync(0, "utf8") : fs.readFileSync(contentSource, "utf8");
 
 // Prepend attribution comment
-const gitName = execSync('git config user.name', { encoding: 'utf8' }).trim();
-const gitEmail = execSync('git config user.email', { encoding: 'utf8' }).trim();
+const gitName = execSync("git config user.name", { encoding: "utf8" }).trim();
+const gitEmail = execSync("git config user.email", { encoding: "utf8" }).trim();
 const attribution = [
-  '<!--',
+  "<!--",
   `  Created with spec`,
   `  Author: ${gitName} <${gitEmail}>`,
-  '-->',
-  '',
-  '',
-].join('\n');
+  "-->",
+  "",
+  "",
+].join("\n");
 content = attribution + content;
 
 // Write
 fs.mkdirSync(fullDir, { recursive: true });
-fs.writeFileSync(fullPath, content, 'utf8');
+fs.writeFileSync(fullPath, content, "utf8");
 
 console.log(
   JSON.stringify({
-    path: relPath,
+    path: relativePath,
     absolute: fullPath,
     filename,
   }),
