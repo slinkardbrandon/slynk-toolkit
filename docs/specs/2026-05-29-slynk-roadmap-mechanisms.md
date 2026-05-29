@@ -143,6 +143,11 @@ inconsistencies.
 - [ ] **Spec lifecycle/status** — `specHistory` resurfaces completed specs as if pending. A cheap
       `> Status: implemented in <PR>` append (from create-pr) would keep the history meaningful.
 - [ ] **Cosmetic:** spec/SKILL.md still says "grilling" in ~4 places though the skill is named `spec`.
+- [ ] **`/handoff` durable / cross-machine gap** _(dogfooding insight)_ — `/handoff` writes only to
+      `{tmpDir}/handoff/`, which is machine-local and lost on `git pull`, so it can't carry work to
+      another machine. GitHub issues fill that gap — and `/spec <issue>` already consumes them, so
+      "file the handoff as an issue" closes a natural loop. Candidate: a `/handoff --issue` (or in-repo)
+      mode. Surfaced when these roadmap next-steps needed to travel cross-machine and tmp wouldn't do.
 
 ### Tier 1.5 — Distribution hardening (from per-runtime review, 2026-05-29)
 
