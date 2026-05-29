@@ -18,13 +18,14 @@ squashing what you're doing.
 Run the helper to collect git state and the OS temp dir:
 
 ```bash
-node "${CLAUDE_PLUGIN_ROOT}/skills/handoff/handoff-context.mjs"
+node "${CLAUDE_PLUGIN_ROOT}/skills/handoff/handoff-context.mjs" 2>/dev/null || slynk-handoff-context
 ```
 
-> Path resolution: on Claude Code, `${CLAUDE_PLUGIN_ROOT}` is set
-> automatically to this plugin's install path. On GitHub Copilot CLI there
-> is no such variable — run the script from this skill's own directory (the
-> path shown by `/skills info handoff`). Node must be on PATH either way.
+> Two ways this resolves, in order: on a Claude Code **marketplace** install,
+> `${CLAUDE_PLUGIN_ROOT}` is set and the absolute path runs with no PATH
+> dependency. Everywhere else (npm/npx, the local installer, Copilot), it's
+> empty so the first command no-ops and the bare `slynk-handoff-context` shim
+> runs from PATH. If neither resolves, run `npm run install:local` from the clone.
 
 `git` is null when you're not in a repo, and it may carry no signal for a pure
 planning session — that's expected. See the shapes in Step 2.
@@ -66,7 +67,7 @@ Include the sections that carry signal; omit the rest.
 # Handoff: <short topic>
 
 > Session: YYYY-MM-DD
-> Code: <repo> · <branch>   —or—   Planning: <tickets / docs / diagram / discussion>
+> Code: <repo> · <branch> —or— Planning: <tickets / docs / diagram / discussion>
 
 ## Summary
 
@@ -75,10 +76,12 @@ Include the sections that carry signal; omit the rest.
 ## Where Things Stand
 
 Code handoff:
+
 - **Branch:** `<branch>` · **Working tree:** <clean / N uncommitted> · **Last commit:** `<SHA>` <msg>
 - <what's done vs. mid-flight across the parallel threads>
 
 Planning handoff:
+
 - **Done / drafted:** <what's fully worked out — tickets specced, sections written, decisions locked>
 - **Pending:** <what's still open — stubs, unanswered questions, untouched parts>
 - **Where it lands:** <where the outputs go — issue tracker, doc path, etc.>

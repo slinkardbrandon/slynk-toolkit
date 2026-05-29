@@ -10,10 +10,10 @@ One plugin (`slynk`), three skills. On Claude Code they invoke as `slynk:spec`,
 `slynk:handoff`, and `slynk:create-pr`; on Copilot CLI as `spec`, `handoff`,
 and `create-pr`.
 
-| Skill | What it does |
-|-------|--------------|
-| [`spec`](plugins/slynk/skills/spec) | Stress-tests a plan, explores the codebase, and emits a paste-ready resume prompt before non-trivial work |
-| [`handoff`](plugins/slynk/skills/handoff) | Captures the session (code or planning) into a standalone doc and emits a paste-ready prompt that starts a fresh agent cold |
+| Skill                                         | What it does                                                                                                                                              |
+| --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`spec`](plugins/slynk/skills/spec)           | Stress-tests a plan, explores the codebase, and emits a paste-ready resume prompt before non-trivial work                                                 |
+| [`handoff`](plugins/slynk/skills/handoff)     | Captures the session (code or planning) into a standalone doc and emits a paste-ready prompt that starts a fresh agent cold                               |
 | [`create-pr`](plugins/slynk/skills/create-pr) | Self-reviews a branch, runs the repo's real CI checks (derived from its config), and opens a PR (GitHub) or MR (GitLab) with a human-sounding description |
 
 ## Install — Claude Code

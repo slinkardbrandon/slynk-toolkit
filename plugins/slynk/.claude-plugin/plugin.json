@@ -6,5 +6,15 @@
   "homepage": "https://github.com/slinkardbrandon/slynk-toolkit/tree/main/plugins/slynk",
   "repository": "https://github.com/slinkardbrandon/slynk-toolkit",
   "license": "MIT",
-  "keywords": ["spec", "planning", "handoff", "pull-request", "merge-request", "github", "gitlab", "workflow", "toolkit"]
+  "keywords": [
+    "spec",
+    "planning",
+    "handoff",
+    "pull-request",
+    "merge-request",
+    "github",
+    "gitlab",
+    "workflow",
+    "toolkit"
+  ]
 }

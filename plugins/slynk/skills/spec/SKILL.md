@@ -45,20 +45,23 @@ Gather all available context silently before engaging the user.
 
 ### 0a — Fast context gather (single command)
 
-Run the helper script to collect repo metadata, convention files, spec
+Run the helper to collect repo metadata, convention files, spec
 history, and config in one shot:
 
 ```bash
-node "${CLAUDE_PLUGIN_ROOT}/skills/spec/spec-context.mjs"
+node "${CLAUDE_PLUGIN_ROOT}/skills/spec/spec-context.mjs" 2>/dev/null || slynk-spec-context
 ```
 
-> Path resolution: on Claude Code, `${CLAUDE_PLUGIN_ROOT}` is set
-> automatically to this plugin's install path. On GitHub Copilot CLI there
-> is no such variable — run the same script from this skill's own directory
-> (the path shown by `/skills info spec`). Node must be on PATH either
-> way. This applies to both helper scripts below.
+> Two ways this resolves, in order: on a Claude Code **marketplace** install,
+> `${CLAUDE_PLUGIN_ROOT}` is set and points at the plugin — the absolute path
+> runs with no PATH dependency. Everywhere else (npm/npx install, the local
+> installer, Copilot), `${CLAUDE_PLUGIN_ROOT}` is empty so the first command
+> no-ops and the bare `slynk-spec-context` shim runs from PATH. If neither
+> resolves, the toolkit isn't installed — run `npm run install:local` from the
+> clone. The other helper (`slynk-write-spec-artifact`) uses the same pattern.
 
 This outputs a JSON blob containing:
+
 - `repo`: root path, name, default branch
 - `conventions`: content of CLAUDE.md, AGENTS.md, CONTRIBUTING.md, CONTEXT.md, etc.
 - `instructions`: content of `.github/instructions/*.instructions.md` (if present)
@@ -139,6 +142,7 @@ and worth capturing (not general programming concepts), begin building an
 internal running list. These will be offered to the user at the end.
 
 Criteria for capturing a term:
+
 - Specific to this project's domain (not generic like "timeout" or "retry")
 - Has been or could be confused with something else
 - Multiple words exist for the same concept in the codebase
@@ -202,7 +206,7 @@ follow-up entirely.
 
 During or after the grilling, surface test cases you identified during
 exploration. The goal here is NOT to plan for coverage metrics — it's to
-think through the meaningful behaviors *before* writing code so the
+think through the meaningful behaviors _before_ writing code so the
 implementing agent doesn't just backfill tests to hit a number.
 
 Based on the spec, propose 3-5 test scenarios. Be explicit that these are
@@ -213,7 +217,7 @@ you don't have full context on what the business actually cares about.
 Frame it as:
 
 > "Before we write code, I want to make sure we're testing the right things.
-> Based on what I see in the spec, here's what I *think* matters — but I'm
+> Based on what I see in the spec, here's what I _think_ matters — but I'm
 > making assumptions about intent, so tell me where I'm off:
 >
 > - <scenario 1 — what you assume matters and why>
@@ -248,37 +252,45 @@ the user — just produce this.
 ## Plan: <short title>
 
 ### What we're building
+
 <1-3 sentences: the what and why>
 
 ### Approach
+
 1. <high-level step — one sentence, no file paths>
 2. <high-level step>
 3. <high-level step>
 
 ### Key decisions
+
 - <decision made during the spec session, with rationale>
 - <decision made during the spec session>
 
 ### Files to touch
+
 - `src/path/to/file.ts` — <what changes and why>
 - `src/path/to/other.ts` — <what changes>
 - `src/path/to/test.ts` — <what test coverage to add>
 
 ### Test cases
+
 - <scenario to test — written as a test title, e.g. "rejects expired tokens
   with a 401 even if the refresh endpoint is unreachable">
 - <edge case or failure mode worth covering>
 - <integration point to validate>
 
 ### Patterns to follow
+
 - <existing pattern in repo to match, with file reference>
 - <convention from CONTRIBUTING.md or similar>
 
 ### How to verify
+
 - <concrete verification: "tests pass", "endpoint returns X", etc.>
 - <manual check if applicable>
 
 ### Assumptions (if any)
+
 - <gaps that weren't fully resolved, with the assumption made>
 ```
 
@@ -291,6 +303,7 @@ Show the plan and offer choices:
 > Here's the implementation plan. Does this look right?
 
 Choices:
+
 - **Looks good — generate the handoff prompt**
 - **Needs changes** — (freeform: what to adjust)
 - **Scope is too big — help me break it down** (→ break it into smaller pieces)
@@ -308,11 +321,14 @@ implementation directly. Skip Phases 5 and 6.
 
 ### 5a — Write spec artifact
 
-Use the helper script to write the artifact to the configured output
-directory. Pipe the content to stdin:
+Use the helper to write the artifact to the configured output directory. Write
+the content to a scratch file first (piping via `echo '...'` breaks on
+apostrophes), then pass it. Same dual-path resolution as the Phase 0a helper:
 
 ```bash
-echo '<artifact content>' | node "${CLAUDE_PLUGIN_ROOT}/skills/spec/write-spec-artifact.mjs" --slug "<slug>" --content -
+WRITE="slynk-write-spec-artifact"
+[ -n "${CLAUDE_PLUGIN_ROOT}" ] && WRITE="node ${CLAUDE_PLUGIN_ROOT}/skills/spec/write-spec-artifact.mjs"
+$WRITE --slug "<slug>" --content /path/to/scratch.md
 ```
 
 The slug should be 3-5 words, kebab-case, derived from the issue or topic.
@@ -383,6 +399,7 @@ After presenting the resume prompt:
 > Prompt is ready and the spec doc has been saved. What's next?
 
 Choices:
+
 - **I'll paste this into a fresh session** — done, session complete
 - **File as a GitHub issue** — create one with this context via `gh issue create`
 - **Break into smaller pieces** — split this plan into separate units of work
@@ -406,6 +423,7 @@ or developers working in this codebase:
 > Want me to add these to CONTEXT.md?"
 
 If the user says yes:
+
 - If `CONTEXT.md` exists → append terms under the appropriate section
 - If it doesn't exist → create it with the format below
 
@@ -430,6 +448,7 @@ _Avoid_: <alternatives>
 ```
 
 Rules for CONTEXT.md:
+
 - Only project-specific domain terms (not "timeout", "retry", "middleware")
 - One or two sentences max per definition
 - Be opinionated — pick the canonical term, list others as "Avoid"
@@ -444,10 +463,12 @@ All settings are optional — sensible defaults are used if no config exists.
 
 ```yaml
 # .spec.yml (all fields optional)
-output_dir: docs/specs          # where spec artifacts are saved
-                                # default: docs/specs
-context_file: CONTEXT.md        # glossary file path (false to disable)
-                                # default: CONTEXT.md
+output_dir:
+  docs/specs # where spec artifacts are saved
+  # default: docs/specs
+context_file:
+  CONTEXT.md # glossary file path (false to disable)
+  # default: CONTEXT.md
 ```
 
 If no config file exists, use defaults silently. Do not prompt the user to
@@ -493,8 +514,8 @@ These apply throughout the entire session:
 9. **Think test-first.** Coverage is a side effect of good tests — not the
    goal. During exploration, identify the meaningful behaviors this change
    introduces or modifies and surface them as concrete test cases during the
-   grilling. The spec should help the implementing agent understand *what to
-   verify* before writing code, so it writes tests that validate real
+   grilling. The spec should help the implementing agent understand _what to
+   verify_ before writing code, so it writes tests that validate real
    behavior. Frame test cases as behaviors ("renders error state when API
    returns 500"), not implementation checks ("calls setError with true").
 

@@ -3,10 +3,10 @@
 An agent-skills toolkit. One plugin, three skills — invoked as `slynk:spec`,
 `slynk:handoff`, and `slynk:create-pr` on Claude Code.
 
-| Skill | Invoke | What it does |
-|-------|--------|--------------|
-| spec | `slynk:spec` | Stress-tests a plan, explores the codebase, and emits a paste-ready resume prompt before non-trivial work |
-| handoff | `slynk:handoff` | Captures the session (code or planning) into a standalone doc and emits a paste-ready prompt that starts a fresh agent cold |
+| Skill     | Invoke            | What it does                                                                                                                    |
+| --------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| spec      | `slynk:spec`      | Stress-tests a plan, explores the codebase, and emits a paste-ready resume prompt before non-trivial work                       |
+| handoff   | `slynk:handoff`   | Captures the session (code or planning) into a standalone doc and emits a paste-ready prompt that starts a fresh agent cold     |
 | create-pr | `slynk:create-pr` | Self-reviews a branch, runs the repo's real CI checks, and opens a PR (GitHub) or MR (GitLab) with a human-sounding description |
 
 ## Requirements
