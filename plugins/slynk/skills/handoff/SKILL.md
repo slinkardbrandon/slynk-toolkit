@@ -1,7 +1,7 @@
 ---
 name: handoff
-description: 'Capture the current conversation into a standalone handoff document and emit a paste-ready prompt so a fresh agent can continue cold — for code or planning work (tickets, docs, diagrams, discussion). Use when the user wants to hand off, spin off, or pass along work, or says things like "let''s hand this off", "write this up for a fresh agent", or "I''ll continue this elsewhere". Prefer over /compact when keeping the current session intact.'
-argument-hint: What will the next session be used for?
+description: 'Reach for this INSTEAD of /compact when you want to keep the current session intact: it captures the session into a standalone doc plus a paste-ready prompt so a fresh agent continues cold, while this session stays untouched. Covers code work (branch, uncommitted, changed files) and planning work (tickets, docs, diagrams, discussion). Use when the user says "hand this off", "spin this off", "write this up for a fresh agent", "continue this later", "save where we are", or is running low on context. Not for pressure-testing a plan before building new work; use the spec skill for that.'
+argument-hint: next session's focus (optional)
 ---
 
 # Create Handoff Document
@@ -119,8 +119,9 @@ Start by reading: <this handoff, plus any artifact to open first>
 ## Step 4 — Save
 
 Generate a short topic slug from the session (2-4 words, kebab-case, no special
-chars). Write to `{tmpDir}/handoff/handoff-{date}-{topic}.md`. Create the
-`handoff` directory if it doesn't exist.
+chars). Write to `{handoffDir}/handoff-{date}-{topic}.md`, where `{handoffDir}`
+is the value the helper returned in Step 1 (the OS temp dir + `slynk/handoff`).
+Create that directory if it doesn't exist.
 
 ## Step 5 — Emit the resume prompt
 
@@ -142,7 +143,11 @@ If the user passed focus arguments, append one line naming that focus.
 Then, as a convenience, show the clipboard one-liner for their platform:
 
 ```
-cat <path> | clip.exe     # WSL
-cat <path> | pbcopy       # macOS
-cat <path> | xclip        # Linux
+cat <path> | clip.exe                # WSL
+cat <path> | pbcopy                  # macOS
+cat <path> | xclip -selection clip   # Linux/X11 (or: xsel -b)
+cat <path> | wl-copy                 # Linux/Wayland
 ```
+
+(Pick whichever clipboard tool is installed — `xclip`/`xsel` on X11,
+`wl-copy` on Wayland.)

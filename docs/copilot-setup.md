@@ -18,8 +18,9 @@ Keeps `git pull` updates live without re-copying:
 ```bash
 git clone https://github.com/slinkardbrandon/slynk-toolkit ~/dev/slynk-toolkit
 mkdir -p ~/.copilot/skills
-ln -s ~/dev/slynk-toolkit/plugins/slynk/skills/spec    ~/.copilot/skills/spec
-ln -s ~/dev/slynk-toolkit/plugins/slynk/skills/handoff ~/.copilot/skills/handoff
+ln -s ~/dev/slynk-toolkit/plugins/slynk/skills/spec      ~/.copilot/skills/spec
+ln -s ~/dev/slynk-toolkit/plugins/slynk/skills/handoff   ~/.copilot/skills/handoff
+ln -s ~/dev/slynk-toolkit/plugins/slynk/skills/create-pr ~/.copilot/skills/create-pr
 ```
 
 Then in `copilot`:
@@ -44,22 +45,24 @@ mkdir $HOME\.copilot\skills\spec
 copy slynk-toolkit\plugins\slynk\skills\spec\* $HOME\.copilot\skills\spec\
 mkdir $HOME\.copilot\skills\handoff
 copy slynk-toolkit\plugins\slynk\skills\handoff\* $HOME\.copilot\skills\handoff\
+mkdir $HOME\.copilot\skills\create-pr
+copy slynk-toolkit\plugins\slynk\skills\create-pr\* $HOME\.copilot\skills\create-pr\
 ```
 
 Re-copy after each `git pull`.
 
 ## Helper-script paths
 
-Claude Code sets `${CLAUDE_PLUGIN_ROOT}` automatically. Copilot has no
-equivalent variable, so when a skill runs a helper script, it resolves the
-script from its own directory (the path shown by `/skills info <name>`). You
-don't need to edit anything — just make sure **Node** is on your `PATH`.
+`spec` and `handoff` ship Node helpers (`create-pr` doesn't). In `SKILL.md` they
+resolve two ways:
 
-## Known issue
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/skills/spec/spec-context.mjs" 2>/dev/null || slynk-spec-context
+```
 
-There's an open Copilot CLI bug where relative script paths in `SKILL.md`
-aren't always resolved against the skill's canonical directory when the
-working directory changes
-([copilot-cli#1090](https://github.com/github/copilot-cli/issues/1090)). These
-skills work around it by resolving an absolute path to the script rather than
-relying on a bare `./script.mjs`.
+`${CLAUDE_PLUGIN_ROOT}` is only set on a Claude Code marketplace install. On
+Copilot it expands to empty, so the first command no-ops and the bare
+`slynk-spec-context` shim runs from PATH — no manual substitution needed. The
+shim self-locates its helper, so it works regardless of where the skill dir
+lives. Just ensure the toolkit was installed via npm/npx (which puts the shims
+on PATH) and **Node ≥18** is available.
