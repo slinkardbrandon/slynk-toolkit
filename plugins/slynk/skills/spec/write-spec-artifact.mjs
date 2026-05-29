@@ -46,7 +46,7 @@ let outputDir = "docs/specs";
 if (fs.existsSync(configPath)) {
   const configContent = fs.readFileSync(configPath, "utf8");
   const match = configContent.match(/^output_dir:\s*(.+)$/m);
-  if (match) outputDir = match[1].trim();
+  if (match) outputDir = cleanYamlValue(match[1]);
 }
 
 // Build filename
@@ -61,9 +61,11 @@ let content;
 content =
   contentSource === "-" ? fs.readFileSync(0, "utf8") : fs.readFileSync(contentSource, "utf8");
 
-// Prepend attribution comment
-const gitName = execSync("git config user.name", { encoding: "utf8" }).trim();
-const gitEmail = execSync("git config user.email", { encoding: "utf8" }).trim();
+// Prepend attribution comment. Git identity may be unset (fresh machine, CI
+// container) — degrade gracefully rather than crash, or the spec content
+// already read from stdin would be lost.
+const gitName = readGitConfig("user.name") || "unknown";
+const gitEmail = readGitConfig("user.email") || "unknown";
 const attribution = [
   "<!--",
   `  Created with spec`,
@@ -85,3 +87,22 @@ console.log(
     filename,
   }),
 );
+
+function readGitConfig(key) {
+  try {
+    return execSync(`git config ${key}`, {
+      encoding: "utf8",
+      stdio: ["pipe", "pipe", "pipe"],
+    }).trim();
+  } catch {
+    return "";
+  }
+}
+
+// Strip an inline `# comment` and surrounding quotes from a flat-YAML value.
+function cleanYamlValue(raw) {
+  return raw
+    .replace(/\s+#.*$/, "")
+    .trim()
+    .replaceAll(/^["']|["']$/g, "");
+}

@@ -46,10 +46,13 @@ On Windows (no symlink), copy the folder instead — see
 
 ## Helper scripts & path resolution
 
-Skills that ship helper scripts resolve them from the skill's own directory.
-On Claude Code the plugin sets `${CLAUDE_PLUGIN_ROOT}` automatically; on Copilot
-the skill computes its own directory. **You never edit any paths.** Scripts are
-Node (`.mjs`) and dependency-free, so all you need is Node on your `PATH`.
+`spec` and `handoff` ship small Node helpers, invoked via a dual-path command:
+`${CLAUDE_PLUGIN_ROOT}` (set on a Claude marketplace install) if present, else
+the bare `slynk-*` shim on PATH (installed by npm/npx). No paths to edit either
+way. See [docs/copilot-setup.md](docs/copilot-setup.md) for details.
+
+Scripts are dependency-free `.mjs`, so all you need is **Node ≥18** on your
+`PATH`.
 
 ## License
 

@@ -18,7 +18,7 @@ const time = `${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds
 
 const result = {
   tmpDir: os.tmpdir(),
-  handoffDir: path.join(os.tmpdir(), "handoff"),
+  handoffDir: path.join(os.tmpdir(), "slynk", "handoff"),
   date,
   timestamp: `${date}-${time}`,
   git: getGitContext(),
@@ -62,12 +62,31 @@ function getGitContext() {
 }
 
 function getInstalledSkills() {
-  // Union skill names across the dirs Claude Code and Copilot CLI discover.
+  // Union skill names across everywhere Claude Code and Copilot CLI discover
+  // skills: the standalone skill dirs, plus every installed Claude Code plugin
+  // (whose skills live under the plugin's installPath/skills, NOT in the
+  // standalone dirs — so a plugin-only install would otherwise show nothing).
   const directories = [
     path.join(os.homedir(), ".claude", "skills"),
     path.join(os.homedir(), ".copilot", "skills"),
     path.join(os.homedir(), ".agents", "skills"),
   ];
+
+  // Enumerate plugin-installed skills from the install manifest. Reading
+  // installPath is more robust than globbing the cache (handles non-default
+  // scopes/versions). Shape: { plugins: { "name@market": [ { installPath } ] } }
+  const manifest = path.join(os.homedir(), ".claude", "plugins", "installed_plugins.json");
+  try {
+    const data = JSON.parse(fs.readFileSync(manifest, "utf8"));
+    for (const installs of Object.values(data.plugins ?? {})) {
+      for (const inst of installs ?? []) {
+        if (inst?.installPath) directories.push(path.join(inst.installPath, "skills"));
+      }
+    }
+  } catch {
+    // no plugins manifest — skip
+  }
+
   const names = new Set();
   for (const dir of directories) {
     try {

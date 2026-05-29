@@ -4,10 +4,12 @@ description: >-
   Self-review a local branch, auto-fix what's safe, verify the repo's real
   CI checks pass, then open a pull/merge request with a human-sounding
   description. Detects GitHub (gh) or GitLab (glab) automatically and derives
-  the checks to run from the repo's CI config — nothing hardcoded. Use when the
-  user wants to open or create a PR/MR, ship a branch, or "review my changes
-  before I push" — e.g. "open a PR for this", "create-pr", "self-review and
-  ship this branch".
+  the checks to run from the repo's CI config, nothing hardcoded. Use when the
+  user wants to open or create a PR/MR, or ship a branch, e.g. "open a PR for
+  this", "self-review and ship this branch", "review my changes as a pre-PR
+  step". Not for reviewing a diff without opening a PR; use a code-review skill
+  for that.
+argument-hint: base branch (optional)
 ---
 
 # Create Pull / Merge Request
@@ -38,11 +40,17 @@ Detect the platform once (Step 0) and use the matching column everywhere:
 | Create       | `gh pr create`                                                                                             | `glab mr create`                                        |
 | Reviewers    | auto via CODEOWNERS                                                                                        | auto via `CODEOWNERS` (Premium) — don't assign manually |
 
-Default branch detection is platform-neutral:
+Default branch detection is platform-neutral and local-first (no network, no
+locale dependence). Fall back to the CLI only if `origin/HEAD` isn't set:
 
 ```bash
-git remote show origin | sed -n '/HEAD branch/s/.*: //p'
+# Capture first, then branch — a piped `|| fallback` is dead code here because
+# the pipe's exit status is sed's (always 0), so it never fires on empty input.
+base=$(git symbolic-ref --quiet refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@')
+[ -n "$base" ] || base=$(git remote show origin | sed -n '/HEAD branch/s/.*: //p')
 ```
+
+(If `origin/HEAD` is missing, `git remote set-head origin -a` repopulates it.)
 
 ## Inputs
 
@@ -73,8 +81,10 @@ git remote get-url origin
 # 3. Current branch
 git branch --show-current
 
-# 4. Default branch
-git remote show origin | sed -n '/HEAD branch/s/.*: //p'
+# 4. Default branch (local-first; CLI fallback only if origin/HEAD is unset).
+# Capture-then-branch: a piped `|| fallback` never fires (pipe exit = sed = 0).
+base=$(git symbolic-ref --quiet refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@')
+[ -n "$base" ] || base=$(git remote show origin | sed -n '/HEAD branch/s/.*: //p')
 ```
 
 **Detect the platform** from the remote URL host:
@@ -265,7 +275,11 @@ If flagged, offer:
 
 Choices:
 
-- **Clean them up** — `git rebase -i origin/<base>`
+- **Clean them up** — most agent runtimes can't drive an interactive
+  `git rebase -i` (there's no editor session). Prefer a non-interactive
+  squash: `git reset --soft origin/<base> && git commit` with a single clean
+  message (confirm the message first). Only fall back to `git rebase -i
+origin/<base>` if the user is running it themselves in a real terminal.
 - **Leave them as-is** — continue
 
 ---
@@ -282,10 +296,12 @@ Scan the diff for committed secrets before any review or push.
    git diff origin/<base>...HEAD | gitleaks detect --pipe --no-banner
    ```
 
-2. **Pattern grep fallback:**
+2. **Pattern grep fallback** (POSIX ERE — `\s` is PCRE and matches a literal
+   `s` on BSD/macOS grep, silently missing real secrets, so use
+   `[[:space:]]`):
 
    ```bash
-   git diff origin/<base>...HEAD | grep -iE 'password\s*[:=]\s*["'"'"'][^"'"'"']{6,}|secret\s*[:=]\s*["'"'"'][^"'"'"']{6,}|api[_-]?key\s*[:=]\s*["'"'"'][^"'"'"']{10,}|token\s*[:=]\s*["'"'"'][^"'"'"']{10,}|BEGIN (RSA |EC |DSA |OPENSSH )?PRIVATE KEY|AKIA[0-9A-Z]{16}'
+   git diff origin/<base>...HEAD | grep -iE 'password[[:space:]]*[:=][[:space:]]*["'"'"'][^"'"'"']{6,}|secret[[:space:]]*[:=][[:space:]]*["'"'"'][^"'"'"']{6,}|api[_-]?key[[:space:]]*[:=][[:space:]]*["'"'"'][^"'"'"']{10,}|token[[:space:]]*[:=][[:space:]]*["'"'"'][^"'"'"']{10,}|BEGIN (RSA |EC |DSA |OPENSSH )?PRIVATE KEY|AKIA[0-9A-Z]{16}'
    ```
 
    Note if falling back: "Full secrets scanning requires `gitleaks`. Using basic pattern matching — install gitleaks for more comprehensive coverage."
@@ -424,19 +440,37 @@ If no formatter was derived, skip Wave 1.
 #### Step 6c — Wave 2: everything else in parallel
 
 Launch every read-only check from the derived list simultaneously as background
-jobs, each logging to its own temp file. Build this dynamically from Step 6a —
-the commands below are illustrative, not fixed:
+jobs, each logging to its own file in a per-run scratch dir, and **capture each
+job's exit code** so the result table is real (don't infer pass/fail from log
+contents). Build this dynamically from Step 6a — the commands below are
+illustrative, not fixed. **Run under bash** (the shell-agnostic loop below
+avoids bash arrays so it also works under `sh`/dash):
 
 ```bash
-# One background job per derived check (example shape)
-npm run lint      > /tmp/pr_check_lint.log  2>&1 & PIDS+=($!)
-npm run typecheck > /tmp/pr_check_types.log 2>&1 & PIDS+=($!)
-npm run build     > /tmp/pr_check_build.log 2>&1 & PIDS+=($!)
-npm run test      > /tmp/pr_check_test.log  2>&1 & PIDS+=($!)
+# Per-run scratch dir: namespaced under /tmp/slynk and collision-safe.
+mkdir -p /tmp/slynk/create-pr
+WORKDIR=$(mktemp -d /tmp/slynk/create-pr/run.XXXXXX)
 
-# Wait for each, capture exit codes
-for pid in "${PIDS[@]}"; do wait "$pid"; done
+# Launch one background job per derived check. Record "name pid" pairs to a
+# file instead of a bash array so the loop is shell-agnostic.
+run_check() {  # run_check <name> <command...>
+  name=$1; shift
+  ( "$@" ) > "$WORKDIR/$name.log" 2>&1 &
+  echo "$name $!" >> "$WORKDIR/jobs"
+}
+run_check lint  npm run lint
+run_check types npm run typecheck
+run_check build npm run build
+run_check test  npm run test
+
+# Wait for each job, recording its individual exit code.
+while read -r name pid; do
+  wait "$pid"; echo "$name $?" >> "$WORKDIR/status"
+done < "$WORKDIR/jobs"
 ```
+
+`$WORKDIR/status` now holds one `<name> <exit-code>` line per check (0 = pass).
+Use it to build the table and to decide which checks failed.
 
 Show all results together once every job finishes — don't interrupt mid-run:
 
@@ -457,10 +491,10 @@ Choices:
 - **Skip this check** — continue (note in the PR description that this check was skipped)
 - **Cancel** — stop
 
-Clean up temp logs once resolved:
+Clean up the scratch dir once resolved (removes only this run's files):
 
 ```bash
-rm -f /tmp/pr_check_*.log
+rm -rf "$WORKDIR"
 ```
 
 Do not proceed to PR creation if any check failed and the user hasn't explicitly chosen to skip it.
@@ -499,7 +533,7 @@ REPO_ROOT=$(git rev-parse --show-toplevel)
 CHANGE_DIR="$REPO_ROOT/change"
 mkdir -p "$CHANGE_DIR"
 
-PACKAGE_NAME=$(node -e "console.log(require('./package.json').name)")
+PACKAGE_NAME=$(node -e "console.log(require('$REPO_ROOT/package.json').name)")
 EMAIL=$(git config user.email)
 UUID=$(node -e "console.log(require('crypto').randomUUID())")
 FILE_SAFE=$(echo "$PACKAGE_NAME" | sed 's/[^a-zA-Z0-9@]/-/g')
@@ -602,10 +636,14 @@ If the user requests edits, apply them and re-display before asking again.
 git push origin <branch> --set-upstream
 ```
 
-**Create the PR** using the detected platform's CLI. Write the description to a temp file first to avoid shell length limits:
+**Create the PR** using the detected platform's CLI. Write the description to a temp file first to avoid shell length limits and quoting issues:
 
 ```bash
-cat > /tmp/pr_body.md << 'EOF'
+mkdir -p /tmp/slynk/create-pr
+# Trailing X's only — BSD/macOS mktemp leaves a non-trailing template literal,
+# so no `.md` suffix here (the body-file's extension is irrelevant to gh/glab).
+BODY=$(mktemp /tmp/slynk/create-pr/body.XXXXXX)
+cat > "$BODY" << 'EOF'
 <generated description>
 EOF
 ```
@@ -615,26 +653,31 @@ EOF
 ```bash
 gh pr create \
   --title "<generated title>" \
-  --body-file /tmp/pr_body.md \
+  --body-file "$BODY" \
   --base <base> \
   --head <current branch> \
   [--draft]                          # if draft was selected
 ```
 
-**GitLab:**
+**GitLab** (read the body from the file via stdin, for parity — avoids
+re-introducing the shell-length/quoting risk that `--description "$(cat …)"`
+would):
 
 ```bash
 glab mr create \
   --title "<generated title>" \
-  --description "$(cat /tmp/pr_body.md)" \
+  --description "$(cat "$BODY")" \
   --target-branch <base> \
   --source-branch <current branch> \
   [--draft] \
   --remove-source-branch=false
 ```
 
+> If your `glab` version supports `--description-file`, prefer
+> `--description-file "$BODY"` over the command substitution above.
+
 ```bash
-rm /tmp/pr_body.md
+rm -f "$BODY"
 ```
 
 > **Note:** Don't manually assign reviewers — both platforms request reviews
