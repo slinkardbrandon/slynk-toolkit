@@ -62,30 +62,18 @@ function getGitContext() {
 }
 
 function getInstalledSkills() {
-  // Union skill names across everywhere Claude Code and Copilot CLI discover
-  // skills: the standalone skill dirs, plus every installed Claude Code plugin
-  // (whose skills live under the plugin's installPath/skills, NOT in the
-  // standalone dirs — so a plugin-only install would otherwise show nothing).
+  // Union skill names across every dir the installer writes to (mirrors
+  // lib/installer.mjs resolveRuntimes): Claude, Copilot, Codex (~/.agents),
+  // and OpenCode under XDG. Honors the same env overrides so a moved config
+  // dir still resolves. Installed skills carry the `slynk-` prefix.
+  const home = os.homedir();
+  const xdg = process.env.XDG_CONFIG_HOME || path.join(home, ".config");
   const directories = [
-    path.join(os.homedir(), ".claude", "skills"),
-    path.join(os.homedir(), ".copilot", "skills"),
-    path.join(os.homedir(), ".agents", "skills"),
+    path.join(process.env.CLAUDE_CONFIG_DIR || path.join(home, ".claude"), "skills"),
+    path.join(process.env.COPILOT_HOME || path.join(home, ".copilot"), "skills"),
+    path.join(home, ".agents", "skills"),
+    path.join(process.env.OPENCODE_CONFIG_DIR || path.join(xdg, "opencode"), "skills"),
   ];
-
-  // Enumerate plugin-installed skills from the install manifest. Reading
-  // installPath is more robust than globbing the cache (handles non-default
-  // scopes/versions). Shape: { plugins: { "name@market": [ { installPath } ] } }
-  const manifest = path.join(os.homedir(), ".claude", "plugins", "installed_plugins.json");
-  try {
-    const data = JSON.parse(fs.readFileSync(manifest, "utf8"));
-    for (const installs of Object.values(data.plugins ?? {})) {
-      for (const inst of installs ?? []) {
-        if (inst?.installPath) directories.push(path.join(inst.installPath, "skills"));
-      }
-    }
-  } catch {
-    // no plugins manifest — skip
-  }
 
   const names = new Set();
   for (const dir of directories) {
@@ -94,7 +82,7 @@ function getInstalledSkills() {
         if (entry.isDirectory() || entry.isSymbolicLink()) names.add(entry.name);
       }
     } catch {
-      // dir doesn't exist — skip
+      // dir doesn't exist -- skip
     }
   }
   return [...names];

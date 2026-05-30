@@ -51,8 +51,11 @@ function getRepoRoot() {
     return path.resolve(process.argv[argumentIndex + 1]);
 
   try {
+    // Silence git's own stderr ("fatal: not a git repository") so the
+    // not-in-repo case emits only our clean JSON error, no stray git noise.
     return execSync("git rev-parse --show-toplevel", {
       encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
     }).trim();
   } catch {
     return null;
@@ -67,7 +70,7 @@ function getDefaultBranch() {
     const reference = execSync("git symbolic-ref --quiet refs/remotes/origin/HEAD", options).trim();
     if (reference) return reference.replace(/^refs\/remotes\/origin\//, "");
   } catch {
-    // origin/HEAD not set — fall through
+    // origin/HEAD not set -- fall through
   }
 
   // Then gh, if available and authed.

@@ -1,61 +1,53 @@
 # Runtime Support
 
-slynk aims to work across AI coding agents from one `SKILL.md` per skill. Support
-is at different maturity levels. This page is the honest status — verified against
-each runtime's actual source/docs, not aspiration.
+slynk works across AI coding agents from one `SKILL.md` per skill. Support is at
+different maturity levels. This page is the honest status -- verified against each
+runtime's actual source/docs, not aspiration.
 
-| Runtime        | Status      | Skills load? | Helper calls | Install documented? |
-| -------------- | ----------- | ------------ | ------------ | ------------------- |
-| Claude Code    | ✅ Verified | Yes          | Yes (dual)   | Yes (marketplace)   |
-| GitHub Copilot | ⚠️ Partial  | Yes\*        | Yes (shim)   | Yes (manual + npm)  |
-| OpenCode       | ⚠️ Partial  | Yes          | Yes (shim)   | No                  |
-| Codex          | ❌ Broken   | No\*\*       | n/a          | No                  |
+| Runtime        | Status          | Skills load? | Helper calls        | Install             |
+| -------------- | --------------- | ------------ | ------------------- | ------------------- |
+| Claude Code    | ✅ Verified     | Yes          | Yes (absolute path) | `npx slynk-toolkit` |
+| GitHub Copilot | ⚠️ Partial      | Yes          | Yes (absolute path) | `npx slynk-toolkit` |
+| OpenCode       | ⚠️ Partial      | Yes          | Yes (absolute path) | `npx slynk-toolkit` |
+| Codex          | ⚠️ Experimental | Yes          | Unverified          | `npx slynk-toolkit` |
 
-**Distribution decision:** `npx slynk-toolkit` is the single install path; the Claude marketplace
-is dropped (npx forces node, which our helpers need anyway). Until the npm build lands, helper calls
-use interim dual-path resolution (`${CLAUDE_PLUGIN_ROOT}` absolute path if set, else the `slynk-*`
-PATH shim) so the still-present marketplace path keeps working. Post-npm: plain bare commands. The
-shim requires the installer's bin dir on PATH — the installer warns if it isn't.
+**Distribution:** `npx slynk-toolkit` is the single install path. The Claude
+marketplace and the old `${CLAUDE_PLUGIN_ROOT}` / PATH-shim machinery are gone.
+The installer copies each skill into the agent's skills dir and expands the
+`{{SLYNK_DIR}}` token to that absolute dir, so helpers run by absolute path with
+no PATH dependency -- the load-bearing PATH risk no longer exists.
 
-## Claude Code — ✅ Verified
+## Claude Code -- ✅ Verified
 
-- Skills load via the local installer (`slynk-spec` in `~/.claude/skills`); the marketplace plugin
-  path (`slynk:spec`) still works today but is being retired in favor of npx.
-- Helper calls resolve via the interim dual-path; post-npm they become bare `slynk-*` commands.
+- Skills load from `~/.claude/skills/slynk-<name>`; invoke as `slynk-<name>`.
+- Helper calls run by absolute path via the expanded `{{SLYNK_DIR}}` token.
 
-## GitHub Copilot — ⚠️ Partial
+## GitHub Copilot -- ⚠️ Partial
 
-- Skills model is real; SKILL.md loads.
-- \*The local installer's `slynk-` directory prefix conflicts with the Agent Skills
-  rule that frontmatter `name` must match the parent directory name (`name: spec`
-  in a `slynk-spec/` dir). May fail strict validation / surface under a wrong name.
-- Two install stories exist (README manual symlink vs npm installer) and produce
-  different results. Needs reconciliation.
-- `argument-hint` frontmatter (used by handoff) is a Claude extension Copilot ignores.
+- Skills model is real; `SKILL.md` loads from `~/.copilot/skills`.
+- The `slynk-` dir prefix plus the installer's frontmatter `name:` rewrite means
+  `name` always equals the dir name, satisfying Copilot's validation contract.
+- Invocation surface differs from Claude; the skill prose is portable as-is.
 
-## OpenCode — ⚠️ Partial
+## OpenCode -- ⚠️ Partial
 
-- Verified against `sst/opencode` source: scans `{skill,skills}/**/SKILL.md` under
-  the config dir. The installer's `~/.config/opencode/skills` target is **correct**.
-- Keys skills by frontmatter `name`, not directory name — so the `slynk-` prefix is
-  cosmetic here and provides no collision protection.
-- Invoke-by-description, not slash commands — `/spec` style invocation doesn't apply;
-  the model selects skills from their `description`.
-- No end-user install section in the README yet.
+- Verified against `sst/opencode` source: scans `{skill,skills}/**/SKILL.md`
+  under the config dir. The installer's `~/.config/opencode/skills` target is correct.
+- Keys skills by frontmatter `name`, so the rewritten `slynk-<name>` is what the
+  model selects on. Invoke-by-description, not slash commands.
 
-## Codex — ❌ Broken (one path fix away from real)
+## Codex -- ⚠️ Experimental
 
-- Codex **does** support the SKILL.md model now (verified: developers.openai.com/codex/skills).
-- \*\*But the installer targets `~/.codex/skills`, which Codex ignores. Codex reads
-  `~/.agents/skills` (and `.agents/skills` in the repo tree). `CODEX_HOME` (`~/.codex`)
-  holds config only — no skills subdir. So the installer prints "codex linked" and
-  Codex sees nothing.
-- Fix: point the codex runtime at `~/.agents/skills`. Tracked in the distribution work.
-- Helper invocation on Codex's sandboxed exec model is unverified — bare PATH commands
-  may hit approval prompts; shipping helpers in a skill `scripts/` dir may fit better.
+- Codex supports the SKILL.md model (developers.openai.com/codex/skills) and
+  reads `~/.agents/skills` (and `.agents/skills` in the repo tree). `CODEX_HOME`
+  (`~/.codex`) holds config only -- no skills subdir. The installer targets
+  `~/.agents/skills`, so skills now load.
+- Helper invocation under Codex's sandboxed exec model is **unverified** -- an
+  absolute `node <path>` call may hit an approval prompt. Untested until a real
+  Codex install confirms it.
 
 ## How this was verified
 
-Findings come from a per-runtime review pass that read each agent's real discovery
-code/docs (OpenCode source, Codex + Copilot skills docs, Claude Code plugin behavior),
-not from assumptions. Re-verify before upgrading a status.
+Findings come from a per-runtime review that read each agent's real discovery
+code/docs (OpenCode source, Codex + Copilot skills docs, Claude Code skill
+behavior), not from assumptions. Re-verify before upgrading a status.

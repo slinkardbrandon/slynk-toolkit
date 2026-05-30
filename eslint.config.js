@@ -64,10 +64,11 @@ export default defineConfig([
     },
   },
   {
-    // Installer + helper scripts + bin shims: a CLI's job IS to console.log,
-    // spawn processes, and touch computed filesystem paths. Relax the rules
-    // that would flag their legitimate behavior. Must be last to win.
-    files: ["scripts/**/*.mjs", "plugins/*/bin/**/*.mjs", "plugins/*/skills/**/*.mjs"],
+    // Installer core/CLI, skill helpers, and tests: a CLI's job IS to
+    // console.log, spawn processes, and touch computed filesystem paths, and
+    // the specs read/write scratch files by computed path. Relax the rules that
+    // would flag this legitimate behavior. Must be last to win.
+    files: ["lib/**/*.mjs", "bin/**/*.mjs", "skills/**/*.mjs", "test/**/*.mjs"],
     rules: {
       "no-console": "off",
       "unicorn/no-process-exit": "off",
