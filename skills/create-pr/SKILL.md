@@ -41,16 +41,8 @@ Detect the platform once (Step 0) and use the matching column everywhere:
 | Reviewers    | auto via CODEOWNERS                                                                                        | auto via `CODEOWNERS` (Premium) -- don't assign manually |
 
 Default branch detection is platform-neutral and local-first (no network, no
-locale dependence). Fall back to the CLI only if `origin/HEAD` isn't set:
-
-```bash
-# Capture first, then branch -- a piped `|| fallback` is dead code here because
-# the pipe's exit status is sed's (always 0), so it never fires on empty input.
-base=$(git symbolic-ref --quiet refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@')
-[ -n "$base" ] || base=$(git remote show origin | sed -n '/HEAD branch/s/.*: //p')
-```
-
-(If `origin/HEAD` is missing, `git remote set-head origin -a` repopulates it.)
+locale dependence); see Step 0 for the snippet. If `origin/HEAD` is missing,
+`git remote set-head origin -a` repopulates it.
 
 ## Inputs
 
@@ -568,15 +560,15 @@ Combine:
 ```markdown
 ## What
 
-[1–2 sentences describing what this PR does, written as if explaining to a teammate who hasn't seen the code -- not a commit log]
+[1-2 sentences describing what this PR does, written as if explaining to a teammate who hasn't seen the code -- not a commit log]
 
 ## Why
 
-[1–2 sentences on the motivation: what problem this solves or what value it adds]
+[1-2 sentences on the motivation: what problem this solves or what value it adds]
 
 ## Notable Changes
 
-[Bullet list of functional changes a reviewer needs to understand -- new capabilities, changed behavior, updated integrations, new config options, removed functionality. Do NOT include: test additions, lint fixes, formatting changes, internal refactors with no behavior change, or CI tweaks.]
+[Bullet list of functional changes a reviewer needs to understand. See the "what qualifies" table below for include/exclude.]
 ```
 
 **If a ticket/issue reference is present,** add a link, sourced in this order:
@@ -701,20 +693,8 @@ If found, remind the user:
 
 ---
 
-## Tips
-
-- Run early and often. A self-review is far cheaper than a round of review comments.
-- The "Fix automatically" option in Step 5 is conservative -- it won't make architectural decisions for you. Anything it skips is clearly noted.
-- For very large diffs, scope the review: paste a filtered diff with "Review only changes under `src/components/`".
-- Because checks are derived from CI config, this stays correct as the repo's pipeline evolves -- no need to edit the skill when the build commands change.
-
 ## Notes on Secrets Scanning
 
-The git host CLIs don't scan local diffs for secrets -- that needs a dedicated tool. This skill uses `gitleaks` when installed and falls back to pattern-based grep otherwise. For reliable coverage:
-
-```bash
-brew install gitleaks   # macOS
-# or see https://github.com/gitleaks/gitleaks for Linux/Windows
-```
-
-Once installed, `gitleaks` is used automatically on every run.
+Step 4 uses `gitleaks` when installed and falls back to pattern grep otherwise.
+For reliable coverage, install it (`brew install gitleaks`, or see
+github.com/gitleaks/gitleaks); it's then used automatically on every run.

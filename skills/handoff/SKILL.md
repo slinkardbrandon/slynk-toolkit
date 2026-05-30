@@ -5,12 +5,11 @@ description: 'Reach for this INSTEAD of /compact when you want to keep the curre
 
 # Create Handoff Document
 
-This is NOT `/compact`. Compact compresses the current session in place and you
-lose the original. This writes a SEPARATE document so the session you're in
-stays intact, while a fresh agent starts cold from the document. Reach for it
-when you've built up handoff-worthy context -- a batch of tickets, a design, a
-diagram, parallel code edits -- and want to spin off the next piece without
-squashing what you're doing.
+This is NOT `/compact` -- compact compresses the current session in place and
+loses the original; this writes a SEPARATE document so the session you're in
+stays intact while a fresh agent starts cold from it. Reach for it once you've
+built up handoff-worthy context (tickets, a design, a diagram, parallel edits)
+and want to spin off the next piece without squashing what you're doing.
 
 ## Step 1 -- Gather Context
 

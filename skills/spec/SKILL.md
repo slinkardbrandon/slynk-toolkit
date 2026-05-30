@@ -17,14 +17,10 @@ Stress-test the user's plan by exploring the codebase, asking targeted
 questions about gaps the code can't answer, and producing a structured
 implementation plan with a paste-ready handoff prompt.
 
-Every question you ask must include your recommended answer based on what
-you found in the code. Never ask what you can look up. Challenge ambiguous
-terms against actual code symbols -- and against the repo's CONTEXT.md
-glossary if one exists. Stress-test with concrete scenarios, not abstract
-"what if."
-
 If the codebase already answers a question, state what you found instead of
-asking. The user should only be interrupted for genuine decisions.
+asking. The user should only be interrupted for genuine decisions. (Question
+discipline and behavioral rules live in Phase 2 and the Behavioral Rules
+section.)
 
 </what-to-do>
 
@@ -69,12 +65,10 @@ This outputs a JSON blob containing:
 - `config`: output_dir and context_file settings
 - `packageScripts`: available npm scripts
 
-Parse this and use it throughout the session. This replaces 5-10 separate
-file reads with a single call. If the script reports it is not in a git
-repo, fall through to 0b.
-
-Read the CONTEXT.md glossary (if present in `conventions`) carefully -- you
-will challenge new terms against it during grilling (see Phase 2).
+Parse this and use it throughout the session. If the script reports it is not
+in a git repo, fall through to 0b. Read the CONTEXT.md glossary (if present in
+`conventions`) carefully -- you will challenge new terms against it during
+grilling (see Phase 2).
 
 ### 0b -- Not in a repo
 
@@ -204,17 +198,10 @@ follow-up entirely.
 
 ### Test-first nudge:
 
-During or after the grilling, surface test cases you identified during
-exploration. The goal here is NOT to plan for coverage metrics -- it's to
-think through the meaningful behaviors _before_ writing code so the
-implementing agent doesn't just backfill tests to hit a number.
-
-Based on the spec, propose 3-5 test scenarios. Be explicit that these are
-**your assumptions based on reading the code and spec** -- not confirmed
-business requirements. The user needs to validate or correct them because
-you don't have full context on what the business actually cares about.
-
-Frame it as:
+Surface 3-5 test scenarios you identified during exploration, framed as your
+assumptions (you don't have full business context, so the user must validate or
+correct them). The goal is to think through meaningful behaviors before code,
+not to chase coverage metrics.
 
 > "Before we write code, I want to make sure we're testing the right things.
 > Based on what I see in the spec, here's what I _think_ matters -- but I'm
@@ -227,17 +214,11 @@ Frame it as:
 > Am I reading the intent right? Anything here that doesn't actually matter,
 > or something important I'm not seeing?"
 
-The user might say "scenario 2 doesn't matter, but you're missing X" -- that
-correction is high-value signal that prevents the implementing agent from
-testing the wrong things.
-
-These validated test cases become part of the spec artifact and handoff
-prompt. When the implementing agent picks up the work, it should write
-these tests first (or alongside) the implementation -- not as an afterthought.
-
-If the repo enforces a coverage bar, respect it -- but keep test scenarios
-proportional to the work. For purely config/infra changes (dependency bumps,
-CI changes), test cases might just be "existing tests still pass" -- that's fine.
+A correction like "scenario 2 doesn't matter, you're missing X" is high-value
+signal. The validated scenarios go into the spec artifact and handoff prompt so
+the implementing agent writes them first, not as an afterthought. If the repo
+enforces a coverage bar, respect it but keep scenarios proportional -- for
+config/infra changes, "existing tests still pass" is a fine test case.
 
 ---
 
@@ -484,45 +465,26 @@ create one.
 
 ## Behavioral Rules
 
-These apply throughout the entire session:
+These apply throughout the entire session. For question discipline --
+recommend rather than ask, never ask what you can look up, challenge ambiguous
+terms (including against the CONTEXT.md glossary), stress-test with concrete
+scenarios, surface contradictions -- follow Phase 2's "Rules for questions."
+Beyond those:
 
-1. **Never ask what you can look up.** If the code, issue, or repo
-   standards already answer a question, state what you found.
-
-2. **Every question includes your recommended answer.** "Should this fail
-   open or closed? I'd recommend fail-closed because the auth middleware
-   already blocks downstream operations when the session expires."
-
-3. **Challenge ambiguous terms.** If a word maps to multiple code symbols --
-   or conflicts with a CONTEXT.md glossary entry -- surface the ambiguity
-   immediately. Don't guess.
-
-4. **Stress-test with concrete scenarios.** Don't ask "what about edge
-   cases?" -- invent a specific scenario: "What if the user has 3 pending
-   mutations when the token expires -- do all 3 get the gate error, or just
-   the first?"
-
-5. **Surface contradictions.** "The issue says 'remove all legacy-api
-   references' but `Contents.js` still imports from legacy-api -- should
-   that file be touched in this work, or is it out of scope?"
-
-6. **Keep it fast.** Target 2-4 total user interactions. If you have enough
+1. **Keep it fast.** Target 2-4 total user interactions. If you have enough
    after the first batch, skip the follow-up.
 
-7. **Respect repo conventions.** The plan and handoff prompt should reflect
-   the repo's actual patterns (naming, file structure, test approach) -- not
+2. **Respect repo conventions.** The plan and handoff prompt should reflect
+   the repo's actual patterns (naming, file structure, test approach), not
    generic best practices.
 
-8. **The spec doc is the artifact.** Everything important from the
+3. **The spec doc is the artifact.** Everything important from the
    conversation gets captured there. The user should never need to re-explain
    a decision that was made during the spec session.
 
-9. **Think test-first.** Coverage is a side effect of good tests -- not the
-   goal. During exploration, identify the meaningful behaviors this change
-   introduces or modifies and surface them as concrete test cases during the
-   grilling. The spec should help the implementing agent understand _what to
-   verify_ before writing code, so it writes tests that validate real
-   behavior. Frame test cases as behaviors ("renders error state when API
-   returns 500"), not implementation checks ("calls setError with true").
+4. **Think test-first.** See Phase 2 -- surface the meaningful behaviors this
+   change introduces as concrete test cases, framed as behaviors ("renders
+   error state when API returns 500"), not implementation checks ("calls
+   setError with true").
 
 </supporting-info>
