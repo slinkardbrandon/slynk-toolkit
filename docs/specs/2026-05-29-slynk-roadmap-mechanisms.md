@@ -73,6 +73,9 @@ These three are **independent of each other** and can be specced in parallel:
 - [ ] **bootstrap dial (suggest→force)** → `docs/specs/<date>-bootstrap-dial.md` _(not yet written)_
   - CC SessionStart hook injects the discovery preamble; `AGENTS.md` carries it cross-agent.
   - `.slynk.yml` `bootstrap: suggest | force | off`, default `suggest`.
+  - **Scope-in (config convergence):** `.slynk.yml` is **the shared toolkit config**, not a
+    bootstrap-only file. Define it here as the single config every skill reads, with `bootstrap`
+    as its first key. The shared loader helper is the unified-config item below.
   - Open questions: exact preamble wording per mode; how `force` language reads without superpowers'
     persuasion-table heaviness; per-agent delivery (hook vs AGENTS.md vs instructions files).
   - **Workflow review steer:** `force` is the highest ceremony risk and has no natural trigger
@@ -83,6 +86,13 @@ These three are **independent of each other** and can be specced in parallel:
   - Shared convention: skills with checklists instruct the agent to create a `TodoWrite` task per item.
   - Open questions: where the convention lives (shared reference? per-skill?); graceful degradation to
     markdown checklist on agents without the tool; which skills opt in.
+- [ ] **unified config + shared loader** → `docs/specs/<date>-unified-config.md` _(not yet written)_
+  - One `.slynk.yml` read by (almost) every skill via a shared dependency-free loader helper, so
+    repeatable setup is config-driven, not restated per `SKILL.md`. Folds today's `.spec.yml` into it.
+  - **Introduced by the bootstrap dial** (which defines `.slynk.yml`); generalized into the shared
+    loader here. Principle: config over prose, scripts over tokens (see `CLAUDE.md`).
+  - Open questions: loader location + how skills locate it (`{{SLYNK_DIR}}` sentinel); precedence
+    (repo vs home); migration of `.spec.yml`; which keys each skill owns.
 
 Then, depends on todo-convention + bootstrap:
 

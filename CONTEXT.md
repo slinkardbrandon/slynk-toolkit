@@ -33,3 +33,10 @@ Drives conditional behavior — e.g. bug/feature pulls in the `/tdd` lens; chore
 A single folder with one `SKILL.md` (+ optional dependency-free `.mjs` helpers). The unit of
 distribution. Works identically across supported agents.
 _Avoid_: "command" — these are skills, not slash-only commands, though agents may surface them as both.
+
+**Sentinel token** (`{{SLYNK_DIR}}`):
+A placeholder in a source `SKILL.md` that the installer expands to the skill's absolute install
+dir, so the skill calls its sibling helper without a PATH lookup. Copy install resolves it to the
+destination dir; `--link` to the source clone. The standard way every helper-bearing skill finds
+its scripts.
+_Avoid_: `${CLAUDE_PLUGIN_ROOT}` / "the plugin root" — that dual-path model is retired.

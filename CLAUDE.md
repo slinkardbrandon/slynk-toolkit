@@ -24,11 +24,17 @@ Read `CONTEXT.md` for the project glossary. Challenge new terms against it.
 - **Derive, don't invent.** Skills read real config/code as source of truth. Specs transcribe
   existing patterns rather than inventing — never fabricate a flavor you can look up.
 - **Each skill owns one thing.** No skill bleeds into another's artifact.
+- **Config over prose, scripts over tokens.** Repeatable setup belongs in dependency-free
+  helpers and a shared config file that skills load, not in restated `SKILL.md` steps. A skill
+  reads config and state; it doesn't re-derive them each run. Spend the least tokens possible on
+  boilerplate setup so the model's budget goes to the actual work.
 
 ## Helper scripts
 
 - Node `.mjs`, dependency-free, resolve their own paths. Never hardcode an install path.
 - Don't pipe content through `echo '...' | node` — apostrophes break it. Use a scratch file or stdin.
+- Skills locate their own helpers via the `{{SLYNK_DIR}}` sentinel token (see `CONTEXT.md`),
+  expanded by the installer to the skill's absolute install dir. No PATH lookup, no `${CLAUDE_PLUGIN_ROOT}`.
 
 ## After editing any skill
 
