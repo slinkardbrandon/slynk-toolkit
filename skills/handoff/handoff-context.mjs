@@ -70,7 +70,7 @@ function getInstalledSkills() {
   const xdg = process.env.XDG_CONFIG_HOME || path.join(home, ".config");
   const directories = [
     path.join(process.env.CLAUDE_CONFIG_DIR || path.join(home, ".claude"), "skills"),
-    path.join(process.env.COPILOT_CONFIG_DIR || path.join(home, ".copilot"), "skills"),
+    path.join(process.env.COPILOT_HOME || path.join(home, ".copilot"), "skills"),
     path.join(home, ".agents", "skills"),
     path.join(process.env.OPENCODE_CONFIG_DIR || path.join(xdg, "opencode"), "skills"),
   ];
@@ -82,7 +82,7 @@ function getInstalledSkills() {
         if (entry.isDirectory() || entry.isSymbolicLink()) names.add(entry.name);
       }
     } catch {
-      // dir doesn't exist — skip
+      // dir doesn't exist -- skip
     }
   }
   return [...names];

@@ -21,7 +21,7 @@ import {
   uninstall,
 } from "../lib/installer.mjs";
 
-// The repo's real skills/ dir — the source the published package ships.
+// The repo's real skills/ dir -- the source the published package ships.
 const REAL_SKILLS = fileURLToPath(new URL("../skills", import.meta.url));
 
 // A literal backslash, sourced via unicode escape so the lint rule that bans

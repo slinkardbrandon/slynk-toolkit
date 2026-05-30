@@ -27,6 +27,13 @@ if (slugIndex === -1 || !args[slugIndex + 1]) {
 }
 
 const slug = args[slugIndex + 1];
+// Slug becomes a filename joined onto the output dir, so constrain it to
+// kebab-case. Rejecting dots and slashes blocks `../` path traversal that
+// would otherwise let a crafted slug write outside the spec dir.
+if (!/^[a-z0-9-]+$/i.test(slug)) {
+  console.error(JSON.stringify({ error: "Invalid --slug: use only letters, digits, and hyphens" }));
+  process.exit(1);
+}
 const contentSource = contentIndex === -1 ? "-" : args[contentIndex + 1];
 
 // Get repo root
@@ -62,7 +69,7 @@ content =
   contentSource === "-" ? fs.readFileSync(0, "utf8") : fs.readFileSync(contentSource, "utf8");
 
 // Prepend attribution comment. Git identity may be unset (fresh machine, CI
-// container) — degrade gracefully rather than crash, or the spec content
+// container) -- degrade gracefully rather than crash, or the spec content
 // already read from stdin would be lost.
 const gitName = readGitConfig("user.name") || "unknown";
 const gitEmail = readGitConfig("user.email") || "unknown";

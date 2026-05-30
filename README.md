@@ -1,7 +1,7 @@
 # slynk-toolkit
 
 Reusable agent skills that empower an engineering workflow. Each skill is a
-single folder driven by one `SKILL.md` — the same file works across **Claude
+single folder driven by one `SKILL.md` -- the same file works across **Claude
 Code**, **GitHub Copilot CLI**, **OpenCode**, and **Codex** (experimental).
 
 ## Skills
@@ -24,8 +24,8 @@ npx slynk-toolkit
 ```
 
 It copies each skill into the skills dir of every AI agent it finds on your
-machine — Claude (`~/.claude`), Copilot (`~/.copilot`), Codex (`~/.agents`,
-experimental), OpenCode (`~/.config/opencode`) — and templates each skill's
+machine -- Claude (`~/.claude`), Copilot (`~/.copilot`), Codex (`~/.agents`,
+experimental), OpenCode (`~/.config/opencode`) -- and templates each skill's
 helper paths to absolute, so there's nothing to add to your `PATH`. A runtime is
 only touched if its config dir already exists.
 

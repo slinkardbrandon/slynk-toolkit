@@ -19,7 +19,7 @@ absolute. Then in `copilot`:
 /skills info slynk-spec
 ```
 
-Re-run `npx slynk-toolkit` to update. `COPILOT_CONFIG_DIR` overrides the
+Re-run `npx slynk-toolkit` to update. `COPILOT_HOME` overrides the
 `~/.copilot` location if you've moved it.
 
 ## Where Copilot looks for skills
@@ -43,4 +43,4 @@ install dir, so helpers run by absolute path:
 node "/home/you/.copilot/skills/slynk-spec/spec-context.mjs"
 ```
 
-No `PATH` entry and no env var required — just **Node ≥18** available.
+No `PATH` entry and no env var required -- just **Node ≥18** available.

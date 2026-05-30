@@ -5,7 +5,7 @@
 
 # npx Installer (Distribution)
 
-> Spec session — 2026-05-30
+> Spec session -- 2026-05-30
 > Issue: [#2](https://github.com/slinkardbrandon/slynk-toolkit/issues/2)
 > Parent: docs/specs/2026-05-29-slynk-roadmap-mechanisms.md (Tier 1.5)
 
@@ -15,7 +15,7 @@ Generalize the working local installer (`scripts/install-local.mjs`) into a publ
 `npx slynk-toolkit` package that copies skills + their sibling helpers into each detected
 agent (Claude / Copilot / OpenCode; Codex experimental), CI publishing on tag. The marketplace
 and the dual-path `${CLAUDE_PLUGIN_ROOT}` / PATH-shim machinery are torn down. Helper paths are
-templated to absolute at install time, which removes every PATH dependency — the load-bearing
+templated to absolute at install time, which removes every PATH dependency -- the load-bearing
 risk in the issue dissolves rather than getting solved.
 
 ## Key Decisions
@@ -35,16 +35,16 @@ risk in the issue dissolves rather than getting solved.
 ## Terms Clarified
 
 - **`{{SLYNK_DIR}}`**: sentinel token in source SKILL.md, expanded by the installer to the absolute directory holding that skill's helper. Copy -> destination skill dir; `--link` -> source clone skill dir.
-  _Avoid_: "the plugin root" / `${CLAUDE_PLUGIN_ROOT}` — that dual-path model is removed.
-- **Templating**: the two mechanical substitutions the installer makes when writing a SKILL.md to an agent's skills dir — expand `{{SLYNK_DIR}}` and rewrite frontmatter `name:` to `slynk-<skill>`.
-  _Avoid_: per-runtime content rewriting (GSD-style) — not needed; skills are portable prose.
-- **Copy mode**: the published / npx default — helpers copied alongside SKILL.md into the agent's skills dir, paths absolute.
-- **`--link` mode**: dev install from a clone — SKILL.md templated to point at the clone so helper edits stay live.
+  _Avoid_: "the plugin root" / `${CLAUDE_PLUGIN_ROOT}` -- that dual-path model is removed.
+- **Templating**: the two mechanical substitutions the installer makes when writing a SKILL.md to an agent's skills dir -- expand `{{SLYNK_DIR}}` and rewrite frontmatter `name:` to `slynk-<skill>`.
+  _Avoid_: per-runtime content rewriting (GSD-style) -- not needed; skills are portable prose.
+- **Copy mode**: the published / npx default -- helpers copied alongside SKILL.md into the agent's skills dir, paths absolute.
+- **`--link` mode**: dev install from a clone -- SKILL.md templated to point at the clone so helper edits stay live.
 
 ## Test Cases
 
 Real vitest specs (`test/installer.test.mjs`) driving `lib/installer.mjs` against a `mkdtemp`
-scratch HOME — no network, no real agent dirs touched.
+scratch HOME -- no network, no real agent dirs touched.
 
 - Copy install into each detected runtime produces `skills/slynk-<name>/` with frontmatter `name: slynk-<name>` and `{{SLYNK_DIR}}` expanded to that dest dir; the helper sibling exists.
 - After copy, frontmatter `name` equals dirname for every skill (Copilot validation contract).
@@ -72,16 +72,16 @@ scratch HOME — no network, no real agent dirs touched.
 
 - **Delete:** `.claude-plugin/marketplace.json`, `plugins/slynk/.claude-plugin/plugin.json`, `plugins/slynk/bin/slynk-*.mjs` (3 shims), `scripts/install-local.mjs`.
 - **Move:** `plugins/slynk/skills/*` -> `skills/*` (helpers ride along inside each skill dir).
-- `lib/installer.mjs` — new: `install`, `uninstall`, `renderSkill` (templating + frontmatter rewrite), `resolveRuntimes`; injectable `home`/`runtimes` for tests.
-- `bin/slynk-toolkit.mjs` — new thin CLI: arg-parse, interactive TTY prompt fallback when no flags, delegates to core.
-- `package.json` — `bin: { "slynk-toolkit": "bin/slynk-toolkit.mjs" }` (drop 3 helper shims); add `files: [skills, bin, lib, README.md, LICENSE, CHANGELOG.md]`; add `vitest` devDep; `"test": "vitest run"`; `prepublishOnly`; update scripts (`install:local` -> `node bin/slynk-toolkit.mjs --link`); bump version.
-- `skills/spec/SKILL.md`, `skills/handoff/SKILL.md` — token form, drop dual-path prose; spec's write-artifact call too.
-- `skills/handoff/handoff-context.mjs` — fix skill-scan dirs to match real install dirs (`~/.agents/skills`, OpenCode dir, `slynk-` prefix).
-- `skills/handoff/SKILL.md` frontmatter — drop Claude-only `argument-hint`.
-- `.github/workflows/release.yml` — `npm publish --access public` on `v*` tags (NODE_AUTH_TOKEN from NPM_TOKEN secret).
-- `.github/workflows/ci.yml` — add `npm test` step.
-- `README.md`, `docs/runtime-support.md`, `docs/copilot-setup.md`, `CHANGELOG.md` — npx-only rewrite + status refresh.
-- `CLAUDE.md` — "After editing any skill" section still describes symlink-only `install:local`; update for copy-default + `--link` + the SKILL.md-edit re-run tradeoff. (Sentinel-token convention + "config over prose" principle already added this session.)
+- `lib/installer.mjs` -- new: `install`, `uninstall`, `renderSkill` (templating + frontmatter rewrite), `resolveRuntimes`; injectable `home`/`runtimes` for tests.
+- `bin/slynk-toolkit.mjs` -- new thin CLI: arg-parse, interactive TTY prompt fallback when no flags, delegates to core.
+- `package.json` -- `bin: { "slynk-toolkit": "bin/slynk-toolkit.mjs" }` (drop 3 helper shims); add `files: [skills, bin, lib, README.md, LICENSE, CHANGELOG.md]`; add `vitest` devDep; `"test": "vitest run"`; `prepublishOnly`; update scripts (`install:local` -> `node bin/slynk-toolkit.mjs --link`); bump version.
+- `skills/spec/SKILL.md`, `skills/handoff/SKILL.md` -- token form, drop dual-path prose; spec's write-artifact call too.
+- `skills/handoff/handoff-context.mjs` -- fix skill-scan dirs to match real install dirs (`~/.agents/skills`, OpenCode dir, `slynk-` prefix).
+- `skills/handoff/SKILL.md` frontmatter -- drop Claude-only `argument-hint`.
+- `.github/workflows/release.yml` -- `npm publish --access public` on `v*` tags (NODE_AUTH_TOKEN from NPM_TOKEN secret).
+- `.github/workflows/ci.yml` -- add `npm test` step.
+- `README.md`, `docs/runtime-support.md`, `docs/copilot-setup.md`, `CHANGELOG.md` -- npx-only rewrite + status refresh.
+- `CLAUDE.md` -- "After editing any skill" section still describes symlink-only `install:local`; update for copy-default + `--link` + the SKILL.md-edit re-run tradeoff. (Sentinel-token convention + "config over prose" principle already added this session.)
 
 ### Patterns to follow
 

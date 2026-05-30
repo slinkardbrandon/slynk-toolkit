@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // slynk-toolkit installer CLI. Thin wrapper over lib/installer.mjs: parse flags,
 // resolve the shipped skills/ dir and the detected runtimes, delegate to the
-// core, print a short status. No PATH/shim logic — helper paths are templated
+// core, print a short status. No PATH/shim logic -- helper paths are templated
 // absolute at install time (see lib/installer.mjs renderSkill).
 //
 // Usage:
@@ -28,10 +28,24 @@ if (flags.has("--help") || flags.has("-h")) {
   process.exit(0);
 }
 
+// Reject anything we don't recognize, so a typo like `--uninstal` errors out
+// instead of silently falling through to a real install.
+const KNOWN_FLAGS = new Set(["--copy", "--link", "--uninstall", "--help", "-h"]);
+const unknown = [...flags].filter((flag) => !KNOWN_FLAGS.has(flag));
+if (unknown.length > 0) {
+  console.error(`Unknown option(s): ${unknown.join(", ")}`);
+  console.error("Run `npx slynk-toolkit --help` for usage.");
+  process.exit(1);
+}
+
 const runtimes = resolveRuntimes({ home: homedir(), env: process.env });
 if (runtimes.length === 0) {
   console.error("No supported AI-agent config dirs found on this machine.");
   console.error("Looked for: ~/.claude, ~/.copilot, ~/.agents (Codex), ~/.config/opencode.");
+  console.error(
+    "Create your agent's config dir first (e.g. run the agent once), or set its config-dir env var,",
+  );
+  console.error("then re-run. Overrides: CLAUDE_CONFIG_DIR, COPILOT_HOME, OPENCODE_CONFIG_DIR.");
   process.exit(1);
 }
 
@@ -52,7 +66,7 @@ async function resolveMode() {
 async function promptMode() {
   const rl = createInterface({ input: process.stdin, output: process.stdout });
   try {
-    const reply = await rl.question("Install mode -- [c]opy (default) or sym[l]ink for dev? ");
+    const reply = await rl.question("Install mode -- [c]opy (default) or [l]ink for dev? ");
     const answer = reply.trim().toLowerCase();
     if (answer === "l" || answer === "link") return "link";
     return "copy";
@@ -104,12 +118,13 @@ function printHelp() {
 
 Usage:
   npx slynk-toolkit              copy skills into every detected agent (default)
+  npx slynk-toolkit --copy       same as the default: copy skills in
   npx slynk-toolkit --link       dev install from a clone (live helper edits)
   npx slynk-toolkit --uninstall  remove slynk-* skills from every detected agent
   npx slynk-toolkit --help
 
 Detected agents: Claude (~/.claude), Copilot (~/.copilot), Codex (~/.agents,
 experimental), OpenCode (~/.config/opencode). A runtime is targeted only if its
-config dir already exists. Env overrides: CLAUDE_CONFIG_DIR, COPILOT_CONFIG_DIR,
+config dir already exists. Env overrides: CLAUDE_CONFIG_DIR, COPILOT_HOME,
 OPENCODE_CONFIG_DIR, XDG_CONFIG_HOME.`);
 }

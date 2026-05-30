@@ -3,7 +3,7 @@
 All notable changes to this project are documented here. Versions follow
 [semver](https://semver.org/); tagged releases (`vX.Y.Z`) mark each cut.
 
-## [1.1.0] — 2026-05-30
+## [1.1.0] -- 2026-05-30
 
 npx-based distribution. Single install path; marketplace and the dual-path
 helper machinery removed.
@@ -13,11 +13,11 @@ helper machinery removed.
 - **`npx slynk-toolkit`** installer: copies skills into every detected agent
   (Claude, Copilot, Codex, OpenCode), templating each skill's helper paths to
   absolute. `--link` for dev installs from a clone, `--uninstall` to remove,
-  `--help` for flags. Bin entry only — no postinstall hook.
+  `--help` for flags. Bin entry only -- no postinstall hook.
 - **`lib/installer.mjs`** importable core (`renderSkill`, `resolveRuntimes`,
   `install`, `uninstall`) with injectable `home`/`env`/`runtimes`, plus vitest
   specs (`test/installer.test.mjs`) that drive it against a scratch HOME.
-- `.github/workflows/release.yml` — `npm publish` on `v*` tags; `npm test`
+- `.github/workflows/release.yml` -- `npm publish` on `v*` tags; `npm test`
   added to CI and as a `prepublishOnly` gate.
 
 ### Changed
@@ -27,7 +27,7 @@ helper machinery removed.
   absolute install dir at install time) instead of the
   `${CLAUDE_PLUGIN_ROOT}` / PATH-shim dual path.
 - Skills install as `slynk-<name>/` with frontmatter `name:` rewritten to match
-  the dir — uniform `slynk-<name>` invocation, and Copilot's name-equals-dirname
+  the dir -- uniform `slynk-<name>` invocation, and Copilot's name-equals-dirname
   contract is satisfied.
 - Codex now targets `~/.agents/skills` (was `~/.codex/skills`, which Codex
   ignores); flagged experimental until helper exec under its sandbox is verified.
@@ -41,7 +41,7 @@ helper machinery removed.
   PATH logic.
 - `handoff`'s Claude-only `argument-hint` frontmatter.
 
-## [1.0.1] — 2026-05-29
+## [1.0.1] -- 2026-05-29
 
 Robustness, portability, and discoverability pass. No new skills.
 
@@ -49,7 +49,7 @@ Robustness, portability, and discoverability pass. No new skills.
 
 - **handoff:** `handoff-context.mjs` now enumerates plugin-installed skills
   (via `~/.claude/plugins/installed_plugins.json`), not just the standalone
-  `~/.claude|.copilot|.agents/skills` dirs — so "Suggested Skills" is no longer
+  `~/.claude|.copilot|.agents/skills` dirs -- so "Suggested Skills" is no longer
   empty for the plugin install path.
 - **spec:** `write-spec-artifact.mjs` no longer crashes (and lose the piped-in
   spec content) when git `user.name`/`user.email` are unset; it degrades to
@@ -83,7 +83,7 @@ Robustness, portability, and discoverability pass. No new skills.
 - **create-pr:** GitLab MR creation documents `--description-file` as the
   preferred form.
 - **Descriptions:** `spec` and `handoff` now have disjoint triggers and mutual
-  "not for X — use the other" pointers so the right one fires; `handoff` leads
+  "not for X -- use the other" pointers so the right one fires; `handoff` leads
   with the `/compact` contrast. Added `argument-hint` to `spec` and `create-pr`
   and shortened `handoff`'s to a noun phrase.
 - **docs:** README/plugin README state **Node ≥18** and accurately describe
@@ -92,14 +92,14 @@ Robustness, portability, and discoverability pass. No new skills.
 - **handoff:** clipboard one-liners mention `xsel`/`wl-copy` (Wayland)
   alternatives to `xclip`.
 
-## [1.0.0] — 2026-05-29
+## [1.0.0] -- 2026-05-29
 
 Initial release: the `slynk` plugin bundling three dual-target agent skills
 (Claude Code + GitHub Copilot CLI):
 
-- **spec** — stress-test a plan before building.
-- **handoff** — capture a session into a standalone doc for a fresh agent.
-- **create-pr** — self-review a branch, run the repo's real CI checks, and open
+- **spec** -- stress-test a plan before building.
+- **handoff** -- capture a session into a standalone doc for a fresh agent.
+- **create-pr** -- self-review a branch, run the repo's real CI checks, and open
   a PR (GitHub) or MR (GitLab).
 
 [1.1.0]: https://github.com/slinkardbrandon/slynk-toolkit/compare/v1.0.1...v1.1.0
