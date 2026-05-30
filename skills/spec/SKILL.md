@@ -51,16 +51,14 @@ Run the helper to collect repo metadata, convention files, spec
 history, and config in one shot:
 
 ```bash
-node "${CLAUDE_PLUGIN_ROOT}/skills/spec/spec-context.mjs" 2>/dev/null || slynk-spec-context
+node "{{SLYNK_DIR}}/spec-context.mjs"
 ```
 
-> Two ways this resolves, in order: on a Claude Code **marketplace** install,
-> `${CLAUDE_PLUGIN_ROOT}` is set and points at the plugin — the absolute path
-> runs with no PATH dependency. Everywhere else (npm/npx install, the local
-> installer, Copilot), `${CLAUDE_PLUGIN_ROOT}` is empty so the first command
-> no-ops and the bare `slynk-spec-context` shim runs from PATH. If neither
-> resolves, the toolkit isn't installed — run `npm run install:local` from the
-> clone. The other helper (`slynk-write-spec-artifact`) uses the same pattern.
+> `{{SLYNK_DIR}}` is expanded by the installer to this skill's absolute install
+> dir, so the helper runs by absolute path — no PATH lookup. If the command
+> isn't found, the toolkit isn't installed: run `npx slynk-toolkit` (or
+> `npm run install:local` from a clone). The sibling helper
+> (`write-spec-artifact.mjs`) uses the same `{{SLYNK_DIR}}` token.
 
 This outputs a JSON blob containing:
 
@@ -326,7 +324,7 @@ implementation directly. Skip Phases 5 and 6.
 Use the helper to write the artifact to the configured output directory. Write
 the content to a scratch file first, then pass it with `--content` — piping via
 `echo` breaks on apostrophes and newlines, which prose is full of. The helper
-binary resolves the same dual way as the Phase 0a helper (env var, else PATH shim):
+runs by absolute path via the `{{SLYNK_DIR}}` token, same as the Phase 0a helper:
 
 ```bash
 mkdir -p /tmp/slynk/spec
@@ -335,9 +333,7 @@ SCRATCH=$(mktemp /tmp/slynk/spec/artifact.XXXXXX)
 cat > "$SCRATCH" << 'EOF'
 <artifact content>
 EOF
-WRITE="slynk-write-spec-artifact"
-[ -n "${CLAUDE_PLUGIN_ROOT}" ] && WRITE="node ${CLAUDE_PLUGIN_ROOT}/skills/spec/write-spec-artifact.mjs"
-$WRITE --slug "<slug>" --content "$SCRATCH"
+node "{{SLYNK_DIR}}/write-spec-artifact.mjs" --slug "<slug>" --content "$SCRATCH"
 rm -f "$SCRATCH"
 ```
 

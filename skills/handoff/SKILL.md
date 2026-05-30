@@ -1,7 +1,6 @@
 ---
 name: handoff
 description: 'Reach for this INSTEAD of /compact when you want to keep the current session intact: it captures the session into a standalone doc plus a paste-ready prompt so a fresh agent continues cold, while this session stays untouched. Covers code work (branch, uncommitted, changed files) and planning work (tickets, docs, diagrams, discussion). Use when the user says "hand this off", "spin this off", "write this up for a fresh agent", "continue this later", "save where we are", or is running low on context. Not for pressure-testing a plan before building new work; use the spec skill for that.'
-argument-hint: next session's focus (optional)
 ---
 
 # Create Handoff Document
@@ -18,14 +17,13 @@ squashing what you're doing.
 Run the helper to collect git state and the OS temp dir:
 
 ```bash
-node "${CLAUDE_PLUGIN_ROOT}/skills/handoff/handoff-context.mjs" 2>/dev/null || slynk-handoff-context
+node "{{SLYNK_DIR}}/handoff-context.mjs"
 ```
 
-> Two ways this resolves, in order: on a Claude Code **marketplace** install,
-> `${CLAUDE_PLUGIN_ROOT}` is set and the absolute path runs with no PATH
-> dependency. Everywhere else (npm/npx, the local installer, Copilot), it's
-> empty so the first command no-ops and the bare `slynk-handoff-context` shim
-> runs from PATH. If neither resolves, run `npm run install:local` from the clone.
+> `{{SLYNK_DIR}}` is expanded by the installer to this skill's absolute install
+> dir, so the helper runs by absolute path — no PATH lookup. If the command
+> isn't found, the toolkit isn't installed: run `npx slynk-toolkit` (or
+> `npm run install:local` from a clone).
 
 `git` is null when you're not in a repo, and it may carry no signal for a pure
 planning session — that's expected. See the shapes in Step 2.

@@ -3,6 +3,44 @@
 All notable changes to this project are documented here. Versions follow
 [semver](https://semver.org/); tagged releases (`vX.Y.Z`) mark each cut.
 
+## [1.1.0] — 2026-05-30
+
+npx-based distribution. Single install path; marketplace and the dual-path
+helper machinery removed.
+
+### Added
+
+- **`npx slynk-toolkit`** installer: copies skills into every detected agent
+  (Claude, Copilot, Codex, OpenCode), templating each skill's helper paths to
+  absolute. `--link` for dev installs from a clone, `--uninstall` to remove,
+  `--help` for flags. Bin entry only — no postinstall hook.
+- **`lib/installer.mjs`** importable core (`renderSkill`, `resolveRuntimes`,
+  `install`, `uninstall`) with injectable `home`/`env`/`runtimes`, plus vitest
+  specs (`test/installer.test.mjs`) that drive it against a scratch HOME.
+- `.github/workflows/release.yml` — `npm publish` on `v*` tags; `npm test`
+  added to CI and as a `prepublishOnly` gate.
+
+### Changed
+
+- Skills moved from `plugins/slynk/skills/` to top-level `skills/`.
+- SKILL.md helper calls use the `{{SLYNK_DIR}}` token (expanded to the skill's
+  absolute install dir at install time) instead of the
+  `${CLAUDE_PLUGIN_ROOT}` / PATH-shim dual path.
+- Skills install as `slynk-<name>/` with frontmatter `name:` rewritten to match
+  the dir — uniform `slynk-<name>` invocation, and Copilot's name-equals-dirname
+  contract is satisfied.
+- Codex now targets `~/.agents/skills` (was `~/.codex/skills`, which Codex
+  ignores); flagged experimental until helper exec under its sandbox is verified.
+- `npm run install:local` is now `node bin/slynk-toolkit.mjs --link`.
+
+### Removed
+
+- Claude marketplace (`.claude-plugin/marketplace.json`,
+  `plugins/slynk/.claude-plugin/plugin.json`), the three `slynk-*` bin shims,
+  `scripts/install-local.mjs`, and all `${CLAUDE_PLUGIN_ROOT}` / `~/.local/bin`
+  PATH logic.
+- `handoff`'s Claude-only `argument-hint` frontmatter.
+
 ## [1.0.1] — 2026-05-29
 
 Robustness, portability, and discoverability pass. No new skills.
@@ -64,5 +102,6 @@ Initial release: the `slynk` plugin bundling three dual-target agent skills
 - **create-pr** — self-review a branch, run the repo's real CI checks, and open
   a PR (GitHub) or MR (GitLab).
 
+[1.1.0]: https://github.com/slinkardbrandon/slynk-toolkit/compare/v1.0.1...v1.1.0
 [1.0.1]: https://github.com/slinkardbrandon/slynk-toolkit/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/slinkardbrandon/slynk-toolkit/releases/tag/v1.0.0

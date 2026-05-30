@@ -38,12 +38,13 @@ Read `CONTEXT.md` for the project glossary. Challenge new terms against it.
 
 ## After editing any skill
 
-Re-run the local install so live changes land in every agent on this machine:
+Dev installs run in `--link` mode (`npm run install:local` -> `node bin/slynk-toolkit.mjs
+--link`). Each installed `SKILL.md` is templated to point its `{{SLYNK_DIR}}` token back at this
+clone, so:
 
-```bash
-npm run install:local
-```
+- **Helper (`.mjs`) edits are live** — the installed SKILL.md already targets the clone's copy.
+- **SKILL.md edits need a re-run** — `npm run install:local` rewrites the templated copy. Re-run
+  after editing any `SKILL.md`, or after adding/renaming a skill, then reload skills in the agent.
 
-It symlinks each skill into the skills dir of every detected agent (Claude, Copilot, Codex,
-OpenCode) as `slynk-<name>`. Symlinks mean edits are usually already live — but re-run after
-**adding or renaming** a skill, then reload skills in the agent. `npm run uninstall:local` removes them.
+`npm run uninstall:local` removes the `slynk-*` entries. Consumers install with copy mode via
+`npx slynk-toolkit` (no clone, helpers copied alongside each SKILL.md).
