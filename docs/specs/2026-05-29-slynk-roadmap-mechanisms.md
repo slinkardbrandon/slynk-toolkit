@@ -105,7 +105,7 @@ These three are **independent of each other** and can be specced in parallel:
   - Open questions: loader location + how skills locate it (`{{SLYNK_DIR}}` sentinel); precedence
     (repo vs home); migration of `.spec.yml`; which keys each skill owns.
 - [ ] **research fanout mechanism** → _deferred; inline in `/brainstorm` for now_
-  - Capability-gated convention for dispatching parallel research subagents that burn *their*
+  - Capability-gated convention for dispatching parallel research subagents that burn _their_
     context (codebase / tickets / web) and return **distilled, cited** findings, keeping the primary
     runner lean. CONTEXT.md already names "subagent fanout" as a mechanism.
   - **Not a shared mechanism yet (YAGNI).** Lives inline in `/brainstorm`'s SKILL.md (its first and
@@ -115,7 +115,7 @@ These three are **independent of each other** and can be specced in parallel:
     (different primitives — CC's Task tool + background tasks; Copilot's own agent mechanism); Codex/
     OpenCode TBD. Detect the runtime's primitive and dispatch the right way; degrade to inline research
     or skip where none exists. The consuming skill must stay fully functional text-only.
-  - **Derive sources, don't invent:** offer only sources reachable in *this* env (codebase always;
+  - **Derive sources, don't invent:** offer only sources reachable in _this_ env (codebase always;
     web if web tools exist; Jira/Confluence/GitHub only if MCP/CLI configured).
   - **Async model:** background-while-work where supported (continue synchronous Q&A, fold findings as
     they land); launch-and-await fallback. Dispatch prompt forces distilled output (claim + source),
@@ -127,7 +127,7 @@ Then, depends on todo-convention + bootstrap:
   - The divergent front-end to `/spec`. Pipeline: vague idea → `/brainstorm` (diverge, shape, pick a
     direction) → `/spec` (poke holes, produce implementable artifact) → implement → `/create-pr`.
     slynk's answer to superpowers' `brainstorm`, where `/spec` is their `writing-plans` half.
-  - **Two-layer ceremony:** firm discipline *inside* the skill (one question-cluster at a time, force
+  - **Two-layer ceremony:** firm discipline _inside_ the skill (one question-cluster at a time, force
     2-3 approaches + a recommendation, gate — no code/spec-handoff until shaped and approved). The
     global nudge lives in the bootstrap router, not here. **Drop** the universal overreach ("every
     project regardless of simplicity") and the 1%/MUST tone. Firm and directive ≠ shouty.
@@ -148,7 +148,8 @@ Then, depends on todo-convention + bootstrap:
     layer" question — should slynk offer a uniform research-source layer (helpers first, MCP only for
     autonomous calls), with orchestration staying prose per-runtime? Fuzzy + research-heavy (needs the
     per-platform MCP-support matrix verified), so it dogfoods both the skill and the fan-out. If it
-    points toward a real tool/MCP abstraction, that's a separate slynk repo (see Repo scope above). → `docs/specs/<date>-tdd-lens.md` _(not yet written)_
+    points toward a real tool/MCP abstraction, that's a separate slynk repo (see Repo scope above).
+- [ ] **/tdd mindset lens + /spec wiring** → `docs/specs/<date>-tdd-lens.md` _(not yet written)_
   - `/tdd`: short standalone reference — real behaviors not coverage; fail-first bug→repro-test→fix.
   - `/spec`: add explicit work classification; **bug/feature → use `/tdd`** to shape Test Cases;
     **chore/config/ticket-only → skip**.
