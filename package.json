@@ -8,7 +8,10 @@
     "name": "Brandon Slinkard",
     "email": "slinkardbrandon@gmail.com"
   },
-  "repository": "https://github.com/slinkardbrandon/slynk-toolkit",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/slinkardbrandon/slynk-toolkit.git"
+  },
   "bin": {
     "slynk-toolkit": "bin/slynk-toolkit.mjs"
   },

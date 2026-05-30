@@ -9,15 +9,18 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      id-token: write # npm provenance attestation
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
           cache: npm
           registry-url: "https://registry.npmjs.org"
-      - run: npm ci
+      # --ignore-scripts: this job holds NPM_TOKEN, so don't run devDep install
+      # lifecycle scripts. eslint/prettier/vitest still work without them.
+      - run: npm ci --ignore-scripts
       # prepublishOnly re-runs lint + format:check + tests as the publish gate.
-      - run: npm publish --access public
+      - run: npm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
