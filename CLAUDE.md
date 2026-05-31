@@ -36,6 +36,30 @@ Read `CONTEXT.md` for the project glossary. Challenge new terms against it.
 - Skills locate their own helpers via the `{{SLYNK_DIR}}` sentinel token (see `CONTEXT.md`),
   expanded by the installer to the skill's absolute install dir. No PATH lookup, no `${CLAUDE_PLUGIN_ROOT}`.
 
+## Review guidelines (for agents reviewing changes)
+
+Apply these lenses to any PR or diff. The concrete DO-flag / Do-NOT-flag lists
+live in `.github/copilot-instructions.md` (which the automated Copilot review
+reads) -- keep the two in sync; this is the why, that is the checklist.
+
+- **Tone.** The Tone section above is a review criterion, not just a writing
+  guide. Flag AI-isms, hedging, preamble, and any prose block over ~3 sentences
+  that should be a list or table. (Formatting -- em-dashes and the like -- is the
+  linter's job, not the review's.)
+- **Cross-agent portability.** A skill must load and run on Claude Code, Copilot
+  (CLI + VS Code), OpenCode, and Codex. Flag Claude-only assumptions (slash UX,
+  Task tool, web tools) without a capability-gated fallback that degrades to
+  text-only. Helpers stay dependency-free and resolve their own paths.
+- **Cross-skill consistency.** Triggers stay disjoint with bidirectional "use Y
+  instead" pointers; intra-toolkit references name the exact installed skill
+  (`slynk-<name>`), never a bare "the spec skill" or `/spec` that could grab a
+  lookalike. Each skill owns one thing -- no bleed into another's artifact.
+- **Helper correctness.** Dependency-free `.mjs`, own-path resolution, no
+  hardcoded install path, `execFileSync` over interpolated shell strings,
+  apostrophe-safe (no `echo '...' | node`).
+- **Slimness.** Config over prose, scripts over tokens. Flag restated boilerplate
+  and verbosity that doesn't carry signal.
+
 ## After editing any skill
 
 Dev installs run in `--link` mode (`npm run install:local` -> `node bin/slynk-toolkit.mjs
