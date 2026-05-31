@@ -125,6 +125,11 @@ the agent uses whatever its runtime exposes.)
   alongside that note, don't duplicate its framing.
 - `skills/brainstorm/SKILL.md` -- reword line 85 so it no longer invokes "the todo-list
   convention" by name (see the opt-out decision above). Required migration, not optional.
+- `docs/specs/2026-05-30-brainstorm-skill.md` -- the "todo-convention dependency"
+  assumption (line ~111) still says brainstorm "uses the todo-list convention ... adopts
+  it when it lands." This spec reverses that (brainstorm is a non-adopter), so reconcile
+  the bullet to match -- brainstorm tracks its flow locally, it does not adopt the shared
+  convention. Otherwise the two specs contradict after the follow-up lands.
 - `CONTEXT.md` -- add the `Todo-list convention` glossary term, and reconcile the
   existing "Mechanism" entry (line ~9) which calls it "task-list convention" -> use one
   name ("todo-list convention", matching the issue and roadmap item).
