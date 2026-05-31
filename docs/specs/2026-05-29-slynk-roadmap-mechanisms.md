@@ -42,6 +42,11 @@ order; the real design work happens in dedicated per-item specs.
 - **Ticket-creation skill:** out of scope for the base offering — too company/project-specific.
 - **Structure:** this roadmap is the parent. Each item gets its own dedicated spec session so context
   stays clean and exploration stays focused.
+- **Repo scope:** `slynk-ai-toolkit` is **skills + workflow**, period. A tool-abstraction / MCP layer
+  (e.g. a "slynk ticket MCP" that uniformly maps Jira / Trello / GitHub Issues) is a **separate slynk
+  repo** if ever pursued, not in scope here. Rationale: an MCP server is a running process with
+  lifecycle/config/creds — a different animal from prose skills + dependency-free `.mjs` helpers.
+  Skills orchestrate and call uniform helpers; they don't ship servers.
 
 ## Terms Clarified
 
@@ -82,6 +87,12 @@ These three are **independent of each other** and can be specced in parallel:
     (set-once-and-forget; nags on unrelated sessions). Keep `suggest`/`off` as the real product;
     treat `force` as a de-emphasized escape hatch, and scope its language to skill-relevance, not a
     blanket "you MUST check skills" on every session start.
+  - **Scope-in (skill router):** `suggest` is not a limp "skills exist, go look" one-liner. It's a
+    **situational router** that strongly encourages reaching for the right skill at the right moment
+    (fuzzy idea → `/brainstorm`; ready to build → `/spec`; wrapping up → `/create-pr`). This is the
+    superpowers pre-injected-bootstrap value, minus the MUST. **Hard part = trigger discrimination:**
+    "whenever it makes sense" must distinguish a brainstorm-worthy moment from a just-answer-me
+    question, or `suggest` becomes over-eager. Nailing the triggers matters more than the wording.
 - [ ] **todo-list convention** → `docs/specs/<date>-todo-convention.md` _(not yet written)_
   - Shared convention: skills with checklists instruct the agent to create a `TodoWrite` task per item.
   - Open questions: where the convention lives (shared reference? per-skill?); graceful degradation to
@@ -93,9 +104,51 @@ These three are **independent of each other** and can be specced in parallel:
     loader here. Principle: config over prose, scripts over tokens (see `CLAUDE.md`).
   - Open questions: loader location + how skills locate it (`{{SLYNK_DIR}}` sentinel); precedence
     (repo vs home); migration of `.spec.yml`; which keys each skill owns.
+- [ ] **research fanout mechanism** → _deferred; inline in `/brainstorm` for now_
+  - Capability-gated convention for dispatching parallel research subagents that burn _their_
+    context (codebase / tickets / web) and return **distilled, cited** findings, keeping the primary
+    runner lean. CONTEXT.md already names "subagent fanout" as a mechanism.
+  - **Not a shared mechanism yet (YAGNI).** Lives inline in `/brainstorm`'s SKILL.md (its first and
+    only consumer). Extract to a shared mechanism only when a second consumer (`/spec`, `pr-review`)
+    needs it — the dispatch + distill contract is written so it can be lifted out cleanly.
+  - **Cross-agent gating (load-bearing):** parallel subagents work on **both Claude Code and Copilot**
+    (different primitives — CC's Task tool + background tasks; Copilot's own agent mechanism); Codex/
+    OpenCode TBD. Detect the runtime's primitive and dispatch the right way; degrade to inline research
+    or skip where none exists. The consuming skill must stay fully functional text-only.
+  - **Derive sources, don't invent:** offer only sources reachable in _this_ env (codebase always;
+    web if web tools exist; Jira/Confluence/GitHub only if MCP/CLI configured).
+  - **Async model:** background-while-work where supported (continue synchronous Q&A, fold findings as
+    they land); launch-and-await fallback. Dispatch prompt forces distilled output (claim + source),
+    never raw dumps — or the mechanism defeats its own context-hygiene purpose.
 
 Then, depends on todo-convention + bootstrap:
 
+- [ ] **/brainstorm (divergent ideation front-end)** → `docs/specs/2026-05-30-brainstorm-skill.md` _(specced)_
+  - The divergent front-end to `/spec`. Pipeline: vague idea → `/brainstorm` (diverge, shape, pick a
+    direction) → `/spec` (poke holes, produce implementable artifact) → implement → `/create-pr`.
+    slynk's answer to superpowers' `brainstorm`, where `/spec` is their `writing-plans` half.
+  - **Two-layer ceremony:** firm discipline _inside_ the skill (one question-cluster at a time, force
+    2-3 approaches + a recommendation, gate — no code/spec-handoff until shaped and approved). The
+    global nudge lives in the bootstrap router, not here. **Drop** the universal overreach ("every
+    project regardless of simplicity") and the 1%/MUST tone. Firm and directive ≠ shouty.
+  - **Opt-in, never a pre-gate.** Fires when the moment is fuzzy; must never auto-front-run all work.
+  - **No durable doc; seeds `/spec`.** The seed IS `/spec`'s inline description (a paste-ready prompt
+    with fixed sections: chosen direction, approaches considered, research findings, new terms) -- so
+    `/spec` needs no code change. Gate has explicit exit criteria (2-3 approaches + named direction +
+    user approval) plus a user-override ramp. Visual = mermaid/ascii inline, not a browser server.
+  - **Research fan-out inline (v1):** when a question raises a research angle, offers specific targets
+    (code/tickets/web) for a one-line approval -- at most once per roundtrip, never once per session,
+    never silent auto-fire (launch only after the offer is accepted). Capability-gated by observable
+    tool presence (not runtime brand); distilled findings fold into the seed. Text-only works everywhere.
+    Firm and concrete, not shouty.
+  - **Helpers + deps:** reuse `spec-context.mjs` for Phase-0 context; add `brainstorm-sources.mjs` to
+    probe reachable sources (gh/glab/MCP/git). Uses the todo-list convention for its multi-step flow
+    where supported, degrading to a markdown checklist. Full design: `docs/specs/2026-05-30-brainstorm-skill.md`.
+  - **Inaugural dogfood topic (candidate):** once `/brainstorm` ships, run it on the "uniform tools
+    layer" question — should slynk offer a uniform research-source layer (helpers first, MCP only for
+    autonomous calls), with orchestration staying prose per-runtime? Fuzzy + research-heavy (needs the
+    per-platform MCP-support matrix verified), so it dogfoods both the skill and the fan-out. If it
+    points toward a real tool/MCP abstraction, that's a separate slynk repo (see Repo scope above).
 - [ ] **/tdd mindset lens + /spec wiring** → `docs/specs/<date>-tdd-lens.md` _(not yet written)_
   - `/tdd`: short standalone reference — real behaviors not coverage; fail-first bug→repro-test→fix.
   - `/spec`: add explicit work classification; **bug/feature → use `/tdd`** to shape Test Cases;
