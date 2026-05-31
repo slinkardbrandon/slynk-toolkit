@@ -91,12 +91,12 @@ can't see a subagent primitive, fall back to the static table below; if that
 runtime has none, fan-out degrades to inline research or launch-and-await, and
 brainstorm still works text-only.
 
-| Runtime     | Subagent primitive     | Fan-out mode          |
-| ----------- | ---------------------- | --------------------- |
-| Claude Code | Task tool + background | background-while-work |
-| Copilot     | agent mechanism        | launch-and-await      |
-| OpenCode    | none confirmed         | inline / await        |
-| Codex       | none confirmed         | inline / await        |
+| Runtime        | Subagent primitive     | Fan-out mode          |
+| -------------- | ---------------------- | --------------------- |
+| Claude Code    | Task tool + background | background-while-work |
+| GitHub Copilot | agent mechanism        | launch-and-await      |
+| OpenCode       | none confirmed         | inline / await        |
+| Codex          | none confirmed         | inline / await        |
 
 (Source: `docs/runtime-support.md`. The table is a static fallback, not a probe
 -- prefer what you actually observe in your tool list.)
