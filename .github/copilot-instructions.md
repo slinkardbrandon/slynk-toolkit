@@ -38,8 +38,12 @@ review-time condensation.
   dir / use `{{SLYNK_DIR}}`), a runtime dependency (helpers are dependency-free),
   shelling out with an interpolated string instead of `execFileSync`, or piping
   content via `echo '...' | node` (apostrophes break it).
-- **Frontmatter**: `name` must equal the installed dir (`slynk-<skill>`). Flag a
-  key that breaks loading on a non-Claude runtime.
+- **Frontmatter**: source `name` is the **bare** skill name matching its source
+  dir (`skills/brainstorm/` -> `name: brainstorm`). The installer adds the
+  `slynk-` prefix at build time, so don't flag a missing prefix in source. Do
+  flag a `name` that doesn't match its dir, or a key that breaks loading on a
+  non-Claude runtime. (This is distinct from cross-skill prose references, which
+  use the installed `slynk-<name>` for runtime disambiguation.)
 - **Restated boilerplate**: setup logic repeated in prose across `SKILL.md` files
   instead of in a shared helper/config (config over prose, scripts over tokens).
 - **Doc drift**: a runtime-support claim not reflected in `docs/runtime-support.md`
