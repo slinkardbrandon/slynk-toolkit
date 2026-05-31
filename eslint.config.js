@@ -30,7 +30,7 @@ export default defineConfig([
           },
         },
       ],
-      // Strip AI typography artifacts so output stays ASCII (matches CLAUDE.md tone rule).
+      // Strip AI typography artifacts so output stays ASCII (matches the AGENTS.md tone rule).
       // Keys are unicode escapes so this rule can't rewrite its own config.
       "unicorn/string-content": [
         "error",
