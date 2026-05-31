@@ -17,6 +17,7 @@
   },
   "files": [
     "skills",
+    "hooks",
     "bin",
     "lib",
     "README.md",

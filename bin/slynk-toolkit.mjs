@@ -20,6 +20,7 @@ import { install, uninstall, resolveRuntimes, listSkills, PREFIX } from "../lib/
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const SKILLS_SOURCE = join(HERE, "..", "skills");
+const HOOK_SOURCE = join(HERE, "..", "hooks", "bootstrap-hook.mjs");
 
 const flags = new Set(process.argv.slice(2));
 
@@ -84,16 +85,38 @@ function run(selectedMode) {
     const result = uninstall({ runtimes });
     for (const rt of runtimes) console.log(`${rt.id.padEnd(9)} cleaned  ${rt.skills}`);
     console.log(
-      `\nRemoved ${result.removed} slynk-* skill(s) across ${runtimes.length} runtime(s).`,
+      `\nRemoved ${result.removed} slynk-* skill(s) and the bootstrap nudge across ` +
+        `${runtimes.length} runtime(s).`,
     );
     return;
   }
 
-  install({ skillsSource: SKILLS_SOURCE, runtimes, mode: selectedMode });
+  const { nudge } = install({
+    skillsSource: SKILLS_SOURCE,
+    runtimes,
+    mode: selectedMode,
+    hookSource: HOOK_SOURCE,
+  });
   const verb = selectedMode === "link" ? "linked into" : "copied to";
   for (const rt of runtimes) {
     const flag = rt.experimental ? "  (experimental)" : "";
     console.log(`${rt.id.padEnd(9)} ${verb} ${rt.skills}${flag}`);
+  }
+
+  // Per-runtime bootstrap status: CC hook installed/skipped, others' AGENTS.md block.
+  const nudgeLabel = {
+    hook: "SessionStart hook ->",
+    agents: "AGENTS.md nudge   ->",
+    skipped: "hook skipped (unparseable settings.json) ->",
+  };
+  for (const entry of nudge) {
+    console.log(`${entry.id.padEnd(9)} ${nudgeLabel[entry.kind]} ${entry.target}`);
+  }
+  if (nudge.some((entry) => entry.kind === "skipped")) {
+    console.log(
+      "\nClaude hook skipped: settings.json did not parse. Add a SessionStart command running\n" +
+        '`node "<config>/slynk/bootstrap-hook.mjs"` by hand, or fix the JSON and re-run.',
+    );
   }
 
   console.log(
