@@ -67,14 +67,11 @@ order; the real design work happens in dedicated per-item specs.
 
 ### Tier 1 — Mechanisms (settle first; they constrain every skill's shape)
 
-These three are **independent of each other** and can be specced in parallel:
+Independent of each other; npm distribution shipped, the rest pending:
 
-- [ ] **npm distribution + marketplace** → `docs/specs/<date>-npm-distribution.md` _(not yet written)_
-  - `npx slynk-toolkit` installer: prompt runtime (Claude/Copilot/Codex/OpenCode) + global/local scope.
-  - Copy or symlink skill dirs into each agent's skills location.
-  - Keep the Claude marketplace for `claude plugin install` + auto-update.
-  - Open questions for that spec: symlink vs copy per OS; how `${CLAUDE_PLUGIN_ROOT}` equivalents
-    resolve on each agent; update/repair flow; idempotency.
+- [x] **npm distribution** — `npx slynk-toolkit` shipped (#7, #8): copies each skill into every
+      detected agent, `{{SLYNK_DIR}}`-templated helper paths, marketplace dropped. Design:
+      `docs/specs/2026-05-30-npx-installer-distribution.md`.
 - [ ] **bootstrap dial (suggest→force)** → `docs/specs/<date>-bootstrap-dial.md` _(not yet written)_
   - CC SessionStart hook injects the discovery preamble; `AGENTS.md` carries it cross-agent.
   - `.slynk.yml` `bootstrap: suggest | force | off`, default `suggest`.
@@ -123,32 +120,13 @@ These three are **independent of each other** and can be specced in parallel:
 
 Then, depends on todo-convention + bootstrap:
 
-- [ ] **/brainstorm (divergent ideation front-end)** → `docs/specs/2026-05-30-brainstorm-skill.md` _(specced)_
-  - The divergent front-end to `/spec`. Pipeline: vague idea → `/brainstorm` (diverge, shape, pick a
-    direction) → `/spec` (poke holes, produce implementable artifact) → implement → `/create-pr`.
-    slynk's answer to superpowers' `brainstorm`, where `/spec` is their `writing-plans` half.
-  - **Two-layer ceremony:** firm discipline _inside_ the skill (one question-cluster at a time, force
-    2-3 approaches + a recommendation, gate — no code/spec-handoff until shaped and approved). The
-    global nudge lives in the bootstrap router, not here. **Drop** the universal overreach ("every
-    project regardless of simplicity") and the 1%/MUST tone. Firm and directive ≠ shouty.
-  - **Opt-in, never a pre-gate.** Fires when the moment is fuzzy; must never auto-front-run all work.
-  - **No durable doc; seeds `/spec`.** The seed IS `/spec`'s inline description (a paste-ready prompt
-    with fixed sections: chosen direction, approaches considered, research findings, new terms) -- so
-    `/spec` needs no code change. Gate has explicit exit criteria (2-3 approaches + named direction +
-    user approval) plus a user-override ramp. Visual = mermaid/ascii inline, not a browser server.
-  - **Research fan-out inline (v1):** when a question raises a research angle, offers specific targets
-    (code/tickets/web) for a one-line approval -- at most once per roundtrip, never once per session,
-    never silent auto-fire (launch only after the offer is accepted). Capability-gated by observable
-    tool presence (not runtime brand); distilled findings fold into the seed. Text-only works everywhere.
-    Firm and concrete, not shouty.
-  - **Helpers + deps:** reuse `spec-context.mjs` for Phase-0 context; add `brainstorm-sources.mjs` to
-    probe reachable sources (gh/glab/MCP/git). Uses the todo-list convention for its multi-step flow
-    where supported, degrading to a markdown checklist. Full design: `docs/specs/2026-05-30-brainstorm-skill.md`.
-  - **Inaugural dogfood topic (candidate):** once `/brainstorm` ships, run it on the "uniform tools
-    layer" question — should slynk offer a uniform research-source layer (helpers first, MCP only for
-    autonomous calls), with orchestration staying prose per-runtime? Fuzzy + research-heavy (needs the
-    per-platform MCP-support matrix verified), so it dogfoods both the skill and the fan-out. If it
-    points toward a real tool/MCP abstraction, that's a separate slynk repo (see Repo scope above).
+- [x] **/brainstorm (divergent ideation front-end)** — built in #11. Divergent front-end to `/spec`
+      (fuzzy idea → shape into 2-3 approaches → gate → inline `slynk-spec` handoff or paste-ready seed),
+      with inline, capability-gated research fan-out. Full design: `docs/specs/2026-05-30-brainstorm-skill.md`.
+  - **Pending dogfood:** run `/brainstorm` on the "uniform tools layer" question — a uniform
+    research-source layer (helpers first, MCP only for autonomous calls), orchestration staying prose
+    per-runtime? Fuzzy + research-heavy, so it exercises both the skill and the fan-out. If it points to
+    a real tool/MCP abstraction, that's a separate slynk repo (see Repo scope above).
 - [ ] **/tdd mindset lens + /spec wiring** → `docs/specs/<date>-tdd-lens.md` _(not yet written)_
   - `/tdd`: short standalone reference — real behaviors not coverage; fail-first bug→repro-test→fix.
   - `/spec`: add explicit work classification; **bug/feature → use `/tdd`** to shape Test Cases;
@@ -218,45 +196,27 @@ Verified findings from a five-agent review (one per runtime + workflow). See
 `docs/runtime-support.md` for the status matrix. These constrain Tier 2, so settle
 them alongside the mechanism specs.
 
-- [x] **Dual-path helper invocation** — _interim._ Helper calls resolve via
-      `node "${CLAUDE_PLUGIN_ROOT}/..." 2>/dev/null || slynk-<helper>`, restoring the marketplace
-      path the bare-command refactor broke. **Now superseded:** dropping the marketplace (see Key
-      Decisions) means `${CLAUDE_PLUGIN_ROOT}` never exists, so the npm build simplifies these back
-      to plain bare commands. Leave the dual-path in place until then — it's harmless. _(done, to be simplified)_
-- [ ] **Drop the marketplace** — remove `.claude-plugin/marketplace.json` + `plugins/slynk/.claude-plugin/plugin.json`,
-      simplify dual-path helper calls back to bare commands, update README. Consider flattening
-      `plugins/slynk/skills/` → `skills/`. Part of the npm-distribution spec.
-- [ ] **Codex path fix** — installer targets `~/.codex/skills`, which Codex **ignores**.
-      Real path is `~/.agents/skills`. One-line fix in `install-local.mjs`; until then "works
-      on Codex" is false. Helper invocation under Codex's sandbox/approval model is unverified.
-- [ ] **Prefix vs name story** — `slynk-` dir prefix behaves differently per runtime. With the
-      marketplace gone the CC `slynk:` namespace is moot; remaining tension is Copilot (requires
-      `name` == dirname, so prefix breaks validation) vs OpenCode (keys by frontmatter `name`, prefix
-      cosmetic). Pick one coherent story in the npm-distribution spec.
-- [ ] **PATH reliability** — the real remaining distribution work. Shims land in `~/.local/bin`
-      (often not on PATH) or the npm prefix; installer only warns, and the agent's exec shell may not
-      inherit interactive PATH. With no marketplace/env-var fallback, getting shims reliably on PATH
-      is load-bearing. npm global bin-link handles the global-install case; solve the local case too.
-- [ ] **Doc drift** — README + `docs/copilot-setup.md` describe the old `${CLAUDE_PLUGIN_ROOT}` /
-      marketplace model. Rewrite for npx-only. Add an OpenCode install section. `copilot-setup.md`
-      omits `create-pr` and references a now-closed bug. Drop/relocate `argument-hint` (Claude-only)
-      from handoff frontmatter.
-- [ ] **`handoff-context.mjs` skill scan** — scans `~/.agents/skills` but installer writes Codex
-      to `~/.codex/skills` and OpenCode to `~/.config/opencode/skills`; scan dirs ≠ install dirs,
-      so "Suggested Skills" is partly dead. Also misses marketplace installs (plugin cache, not
-      `~/.claude/skills`).
+Most of this shipped with the npx installer (#7, #8); `docs/runtime-support.md` is the live matrix.
+
+- [x] **Marketplace dropped + PATH made moot** — `#7`/`#8`. Removed `.claude-plugin/`, `plugins/`, and
+      the `${CLAUDE_PLUGIN_ROOT}` dual-path; flattened to top-level `skills/`; helpers resolve by
+      absolute path via the `{{SLYNK_DIR}}` token, so the PATH-shim risk no longer exists.
+- [x] **Codex path fix** — installer targets `~/.agents/skills` (`#7`). Helper exec under Codex's
+      sandbox is still unverified (see runtime-support).
+- [x] **Prefix vs name story** — settled: the installer prefixes `slynk-` and rewrites frontmatter
+      `name` to match on every runtime.
+- [ ] **Doc drift** — partly done (runtime-support + README rewritten for npx). Open: `copilot-setup.md`
+      staleness, and `argument-hint` (not universally supported) still in spec/create-pr/brainstorm frontmatter.
+- [ ] **`handoff-context.mjs` skill scan** — scans `~/.agents/skills` only; installer also writes
+      `~/.claude`, `~/.copilot`, `~/.config/opencode`, so "Suggested Skills" is partly dead.
 
 ### Tier 3 — Cleanup
 
-- [x] **grill→spec naming leftover** — renamed `getRecentGrillDocs`→`getRecentSpecDocs` and
-      `readGrillConfig`→`readSpecConfig` in `spec-context.mjs`. _(done)_
-- [x] **npm distribution (local path)** — local installer (`scripts/install-local.mjs`) +
-      `package.json` bin entries + Prettier/ESLint/CI shipped. npx-from-registry publish still
-      pending its own spec. _(partial — local path done)_
-- [ ] **Merge PR #1 hardening** — BSD grep `\s` secrets-scan bug, dash-incompatible bash arrays,
-      apostrophe-breaking spec-write (`echo '…' | node`), `/tmp/slynk/` scratch namespacing, `master→main`
-      fallback, CHANGELOG, version bump. This is the production-grade portability pass; merge before
-      building on top.
+- [x] **grill→spec naming** — `getRecentGrillDocs`/`readGrillConfig` renamed in `spec-context.mjs`.
+- [x] **npm distribution** — local installer, bin entries, Prettier/ESLint/CI, then the npx installer
+      shipped (#7, #8); design in `docs/specs/2026-05-30-npx-installer-distribution.md`.
+- [x] **PR #1 hardening** — merged (#1): BSD grep secrets bug, dash-safe arrays, apostrophe-safe
+      spec-write, `/tmp/slynk/` namespacing, `master→main` fallback, CHANGELOG.
 
 ## How to verify
 

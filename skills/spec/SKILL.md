@@ -5,9 +5,10 @@ description: >-
   questions the code can't answer (each with a recommendation), and produce a
   structured spec. Use when the user wants to spec something out, plan an
   approach, or "grill"/pressure-test a plan before non-trivial work, e.g.
-  "let's spec this out", "help me plan X", "poke holes in this". Not for
-  capturing a finished session to continue elsewhere; use the handoff skill
-  for that.
+  "let's spec this out", "help me plan X", "poke holes in this". Not for a
+  fuzzy, unshaped idea with no direction yet; use slynk-brainstorm to diverge
+  first. Not for capturing a finished session to continue elsewhere; use
+  slynk-handoff for that.
 argument-hint: issue number, owner/repo#n, or a description (optional)
 ---
 
@@ -34,6 +35,13 @@ section.)
 /spec owner/repo#142               -- issue in another repo
 /spec "migrate X to use Y"         -- inline description
 ```
+
+If an upstream `slynk-brainstorm` session handed off a seed (chosen direction,
+approaches considered, research findings, new terms), consume it as-is, no
+parsing needed -- whether it arrives as the inline description above (pasted
+into a fresh session) or as the framing from a brainstorm continuing in this
+same session. Its "approaches considered" and "research findings" feed Phase 2
+grilling and the Key Decisions rationale; don't drop them.
 
 ---
 
@@ -367,7 +375,7 @@ execution context, not a durable design record.
 
 The spec artifact (5a) holds the detail. Present a short, paste-ready prompt
 that points a fresh session at it -- do **not** restate the plan inline. This
-shares its format with the `/handoff` skill.
+shares its format with the `slynk-handoff` skill.
 
 ```
 Implement the spec from the planning session. Read it first:
@@ -393,7 +401,7 @@ Choices:
 - **Just start implementing here** -- begin work in this session
 
 For a fuller session capture (current state, decisions, next steps) rather
-than just the spec pointer, run `/handoff`.
+than just the spec pointer, run `slynk-handoff`.
 
 ---
 

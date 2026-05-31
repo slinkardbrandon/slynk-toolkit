@@ -1,6 +1,6 @@
 ---
 name: handoff
-description: 'Reach for this INSTEAD of /compact when you want to keep the current session intact: it captures the session into a standalone doc plus a paste-ready prompt so a fresh agent continues cold, while this session stays untouched. Covers code work (branch, uncommitted, changed files) and planning work (tickets, docs, diagrams, discussion). Use when the user says "hand this off", "spin this off", "write this up for a fresh agent", "continue this later", "save where we are", or is running low on context. Not for pressure-testing a plan before building new work; use the spec skill for that.'
+description: 'Reach for this INSTEAD of /compact when you want to keep the current session intact: it captures the session into a standalone doc plus a paste-ready prompt so a fresh agent continues cold, while this session stays untouched. Covers code work (branch, uncommitted, changed files) and planning work (tickets, docs, diagrams, discussion). Use when the user says "hand this off", "spin this off", "write this up for a fresh agent", "continue this later", "save where we are", or is running low on context. Not for pressure-testing a plan before building new work (use slynk-spec), and not for shaping a fuzzy, unshaped idea (use slynk-brainstorm).'
 ---
 
 # Create Handoff Document

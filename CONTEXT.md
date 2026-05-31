@@ -34,6 +34,31 @@ A single folder with one `SKILL.md` (+ optional dependency-free `.mjs` helpers).
 distribution. Works identically across supported agents.
 _Avoid_: "command" -- these are skills, not slash-only commands, though agents may surface them as both.
 
+**Seed** (`/brainstorm`):
+The structured brainstorm output `/spec` consumes as input. On approval brainstorm defaults to
+continuing into `/spec` inline; the seed is the paste-ready fallback for a fresh session. Fixed
+sections: chosen direction, approaches considered, research findings, new terms. Not durable, never
+written to disk.
+_Avoid_: "the spec" -- the seed is `/spec`'s input, not its output.
+
+**The gate** (`/brainstorm`):
+The in-skill rule blocking code or `/spec` handoff until the idea is shaped (2-3 approaches + a
+named direction) and approved (explicit user yes). The user may collapse it deliberately; the agent
+may not.
+_Avoid_: a universal `<HARD-GATE>` mandate on every task -- the gate is scoped to a running
+brainstorm session, not forced ceremony.
+
+**Research angle**:
+An open question answerable by inspecting a reachable source (codebase / tickets / web), not by the
+user's preference or intent. The firing condition for research fan-out.
+_Avoid_: a topic -- an angle names a concrete source + scope, not a subject area.
+
+**Research fan-out**:
+Dispatching parallel research subagents that burn their own context and return distilled, cited
+findings (claim + source), keeping the primary runner lean. Capability-gated by observable tool
+presence. `/brainstorm` is the first consumer; inline for now, extractable later.
+_Avoid_: "subagent fanout" alone -- the load-bearing part is the distilled, cited return.
+
 **Sentinel token** (`{{SLYNK_DIR}}`):
 A placeholder in a source `SKILL.md` that the installer expands to the skill's absolute install
 dir, so the skill calls its sibling helper without a PATH lookup. Copy install resolves it to the

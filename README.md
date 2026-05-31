@@ -6,14 +6,16 @@ Code**, **GitHub Copilot CLI**, **OpenCode**, and **Codex** (experimental).
 
 ## Skills
 
-Three skills, invoked as `slynk-spec`, `slynk-handoff`, and `slynk-create-pr`
-across every runtime (the installer prefixes each so the name matches its dir).
+Four skills, invoked as `slynk-brainstorm`, `slynk-spec`, `slynk-handoff`, and
+`slynk-create-pr` across every runtime (the installer prefixes each so the name
+matches its dir).
 
-| Skill                           | What it does                                                                                                                                              |
-| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`spec`](skills/spec)           | Stress-tests a plan, explores the codebase, and emits a paste-ready resume prompt before non-trivial work                                                 |
-| [`handoff`](skills/handoff)     | Captures the session (code or planning) into a standalone doc and emits a paste-ready prompt that starts a fresh agent cold                               |
-| [`create-pr`](skills/create-pr) | Self-reviews a branch, runs the repo's real CI checks (derived from its config), and opens a PR (GitHub) or MR (GitLab) with a human-sounding description |
+| Skill                             | What it does                                                                                                                                                 |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [`brainstorm`](skills/brainstorm) | Shapes a fuzzy idea into 2-3 approaches with tradeoffs, picks a direction, then continues into `slynk-spec` inline (or hands off a seed for a fresh session) |
+| [`spec`](skills/spec)             | Stress-tests a plan, explores the codebase, and emits a paste-ready resume prompt before non-trivial work                                                    |
+| [`handoff`](skills/handoff)       | Captures the session (code or planning) into a standalone doc and emits a paste-ready prompt that starts a fresh agent cold                                  |
+| [`create-pr`](skills/create-pr)   | Self-reviews a branch, runs the repo's real CI checks (derived from its config), and opens a PR (GitHub) or MR (GitLab) with a human-sounding description    |
 
 ## Install
 
@@ -29,8 +31,8 @@ experimental), OpenCode (`~/.config/opencode`) -- and templates each skill's
 helper paths to absolute, so there's nothing to add to your `PATH`. A runtime is
 only touched if its config dir already exists.
 
-Then reload skills in your agent and invoke `slynk-spec`, `slynk-handoff`, or
-`slynk-create-pr`.
+Then reload skills in your agent and invoke `slynk-brainstorm`, `slynk-spec`,
+`slynk-handoff`, or `slynk-create-pr`.
 
 ```bash
 npx slynk-toolkit --uninstall   # remove the slynk-* skills again
