@@ -9,8 +9,8 @@ product is mostly **prose and portability**, so reviews weight tone and
 cross-agent correctness above typical app concerns.
 
 Source of truth: `CONTEXT.md` (glossary -- challenge new terms against it) and
-`CLAUDE.md` (working rules + the full review lenses). This file is the
-review-time condensation.
+`AGENTS.md` (working rules + the full review lenses; `CLAUDE.md` imports it).
+This file is the review-time condensation.
 
 ## Tone (enforce on every doc / skill / spec change)
 
@@ -70,4 +70,4 @@ review-time condensation.
 - Helpers: Node `.mjs`, dependency-free, resolve their own paths, located via
   `{{SLYNK_DIR}}`. Scratch under `/tmp/slynk/<skill>/` with collision-safe `mktemp`.
 - Install: `slynk-` prefix on both the dir and frontmatter `name`, every runtime.
-- Full rules and the review lenses live in `CLAUDE.md`.
+- Full rules and the review lenses live in `AGENTS.md` (`CLAUDE.md` imports it).
