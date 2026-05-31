@@ -2,8 +2,9 @@
 name: brainstorm
 description: >-
   Diverge on a fuzzy idea BEFORE planning it: shape the fog into 2-3 concrete
-  approaches with tradeoffs, recommend a direction, and on your approval emit a
-  paste-ready seed that a fresh /spec turns into a plan. Use when the moment is
+  approaches with tradeoffs, recommend a direction, and on your approval
+  continue into the spec skill inline (or hand off a paste-ready seed for a
+  fresh session). Use when the moment is
   unshaped, e.g. "rough idea", "not sure how to approach this", "kick around
   some options", "help me think through X". When a question can be answered by
   inspecting a real source, it offers parallel research agents. Not for a single

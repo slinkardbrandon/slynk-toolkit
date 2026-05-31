@@ -12,7 +12,7 @@ matches its dir).
 
 | Skill                             | What it does                                                                                                                                              |
 | --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`brainstorm`](skills/brainstorm) | Diverges on a fuzzy idea into 2-3 approaches with tradeoffs, recommends a direction, and on approval emits a paste-ready seed for `/spec`                 |
+| [`brainstorm`](skills/brainstorm) | Shapes a fuzzy idea into 2-3 approaches with tradeoffs, picks a direction, then hands off to the spec skill                                               |
 | [`spec`](skills/spec)             | Stress-tests a plan, explores the codebase, and emits a paste-ready resume prompt before non-trivial work                                                 |
 | [`handoff`](skills/handoff)       | Captures the session (code or planning) into a standalone doc and emits a paste-ready prompt that starts a fresh agent cold                               |
 | [`create-pr`](skills/create-pr)   | Self-reviews a branch, runs the repo's real CI checks (derived from its config), and opens a PR (GitHub) or MR (GitLab) with a human-sounding description |

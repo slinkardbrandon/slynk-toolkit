@@ -58,7 +58,7 @@ Behavioral / discoverability checks, proportional to a prose skill.
 - Trigger discrimination: a fuzzy prompt fires `/brainstorm`; an existing plan fires `/spec`; a session capture fires `/handoff`. Descriptions are disjoint with bidirectional pointers.
 - Gate criteria: brainstorm writes no code and doesn't invoke `/spec` until 2-3 approaches are shown, a direction is recommended, and the user explicitly approves. A user "just build it" collapses the gate; the agent never does on its own.
 - Approaches: presents >=2 (ideally 3) with tradeoffs + a recommendation; if only one is viable, says so without fabricating alternatives.
-- Seed: on approval, emits a paste-ready prompt with the fixed sections; a fresh `/spec` consumes it as its description with no `/spec` code change; approaches + findings surface in `/spec`'s grilling/decisions, not dropped.
+- Handoff: on approval, defaults to continuing into `/spec` inline (carrying the shaped direction/approaches/findings as its input); the paste-ready seed (fixed sections) is the fallback for a fresh session. Either way `/spec` needs no code change; approaches + findings surface in `/spec`'s grilling/decisions, not dropped.
 - Fan-out offer: only on a roundtrip with a research angle; names specific targets; lists only sources `brainstorm-sources.mjs` reports reachable; at most once per roundtrip; doesn't re-offer after a decline unless a new source becomes reachable; silent when nothing is researchable.
 - Fan-out ordering: agents launch only after the fan-out offer is accepted (not on idea-approval); dispatched agents return claim + source, not raw dumps.
 - Capability gating: fan-out is offered iff a subagent primitive is observably present; on a no-primitive runtime it degrades to inline/await and brainstorm still works text-only.
@@ -71,7 +71,7 @@ Behavioral / discoverability checks, proportional to a prose skill.
 ### Approach
 
 1. Author `skills/brainstorm/SKILL.md` (top-level `skills/`).
-2. Process: reuse `spec-context.mjs` for context -> progressive clarifying questions (batch only independent ones) -> per-roundtrip fan-out offer when a research angle appears -> 2-3 approaches + recommendation -> present shaped direction -> gate (explicit criteria + user-override) -> emit paste-ready seed.
+2. Process: reuse `spec-context.mjs` for context -> progressive clarifying questions (batch only independent ones) -> per-roundtrip fan-out offer when a research angle appears -> 2-3 approaches + recommendation -> present shaped direction -> gate (explicit criteria + user-override) -> hand off to `/spec` (inline continuation by default; paste-ready seed as the fresh-session fallback).
 3. Add `brainstorm-sources.mjs` (reachable-source probe) and a static runtime-primitive table (from runtime-support.md) for capability gating.
 4. Write the fan-out dispatch + distill block self-contained (claim + source; launch only after offer accepted; specific targets) for easy later extraction.
 5. Pin the description triggers + bidirectional pointers; add the inverse pointer to `/spec`'s description.
@@ -99,7 +99,7 @@ Behavioral / discoverability checks, proportional to a prose skill.
 
 ### How to verify
 
-- Dry-run a fuzzy prompt: diverges (>=2 approaches), holds the gate on explicit criteria, emits a paste-ready seed on approval; paste the seed into `/spec` and confirm it runs with no `/spec` change.
+- Dry-run a fuzzy prompt: diverges (>=2 approaches), holds the gate on explicit criteria, and on approval offers inline `/spec` continuation (default) or a paste-ready seed; take the seed path, paste it into `/spec`, and confirm it runs with no `/spec` change.
 - Dry-run a fuzzy + research-y prompt on Claude Code and Copilot: fan-out offered with specific targets, launched only after accept, runs in background while Q&A continues, distilled findings land in the seed.
 - Confirm `brainstorm-sources.mjs` reports only actually-reachable sources (toggle gh auth / a fake MCP) and the offer reflects it.
 - Confirm a no-primitive runtime (or simulated) degrades to inline/await and text-only still works.

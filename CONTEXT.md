@@ -35,9 +35,10 @@ distribution. Works identically across supported agents.
 _Avoid_: "command" -- these are skills, not slash-only commands, though agents may surface them as both.
 
 **Seed** (`/brainstorm`):
-The paste-ready prompt brainstorm emits on approval, consumed by a fresh `/spec` as its inline
-description. Fixed sections: chosen direction, approaches considered, research findings, new terms.
-Not durable, never written to disk.
+The structured brainstorm output `/spec` consumes as input. On approval brainstorm defaults to
+continuing into `/spec` inline; the seed is the paste-ready fallback for a fresh session. Fixed
+sections: chosen direction, approaches considered, research findings, new terms. Not durable, never
+written to disk.
 _Avoid_: "the spec" -- the seed is `/spec`'s input, not its output.
 
 **The gate** (`/brainstorm`):
