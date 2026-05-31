@@ -59,6 +59,17 @@ Optionally provide a base branch after invoking this skill:
 > parallel. The self-review (Step 5) is the only step that requires sequential
 > user interaction before the pipeline can start.
 
+> **Track your progress.** If your runtime has a task-list / todo tool (most do; the
+> name varies) and this run is non-trivial:
+>
+> - One task per step below; mark each in progress as you start it, done as you finish.
+> - Judge non-trivial at Step 1, once you have the diff: multiple files or an expected
+>   user pause -> track it; a single-file or docs-only change -> skip and just narrate.
+> - No such tool -> post the list once as a markdown checklist, re-posting with boxes
+>   ticked only at meaningful boundaries (you can't edit a prior message).
+>
+> This tracks the workflow steps, not the code you're shipping.
+
 ### Step 0 -- Guard Checks & Platform Detection
 
 Run all of the following before doing anything else:

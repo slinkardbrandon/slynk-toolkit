@@ -6,7 +6,7 @@ Lightweight by default, dialable up -- adopts useful mechanisms without forced c
 ## Language
 
 **Mechanism**:
-Reusable plumbing a skill or the toolkit provides -- bootstrap hook, task-list convention,
+Reusable plumbing a skill or the toolkit provides -- bootstrap hook, todo-list convention,
 subagent fanout. slynk adopts mechanisms.
 _Avoid_: conflating with "ceremony."
 
@@ -59,6 +59,16 @@ Dispatching parallel research subagents that burn their own context and return d
 findings (claim + source), keeping the primary runner lean. Capability-gated by observable tool
 presence. `/brainstorm` is the first consumer; inline for now, extractable later.
 _Avoid_: "subagent fanout" alone -- the load-bearing part is the distilled, cited return.
+
+**Todo-list convention**:
+The shared instruction a linear, static multi-step skill (`slynk-spec`, `slynk-create-pr`) carries:
+mirror your own flow as native task-list items -- one per step, updated as you go -- to stay on-rails.
+Capability-gated on the runtime's task-list tool (whatever it's named -- CC `TaskCreate`, OpenCode
+`todowrite`, Codex `update_plan`; Copilot CLI has none); degrades to a re-posted markdown checklist
+where none exists. Emits only on non-trivial 4+ step runs. Tracks the skill's process, not the work
+it plans.
+_Avoid_: naming a specific tool in a `SKILL.md` -- names differ per runtime and drift per version, so
+gate on capability. _Avoid_: forcing it on divergent skills (`/brainstorm`) -- it's for static flows.
 
 **Sentinel token** (`{{SLYNK_DIR}}`):
 A placeholder in a source `SKILL.md` that the installer expands to the skill's absolute install

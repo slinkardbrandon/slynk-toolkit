@@ -34,9 +34,10 @@ order; the real design work happens in dedicated per-item specs.
   lightweight-by-default + YAGNI on knobs; adjust by editing the source and reinstalling). A CC
   SessionStart hook fires it deterministically on Claude; a slim `AGENTS.md` block carries it on
   Codex/OpenCode/Copilot-CLI. Core to the offering -- it's the discovery layer for the whole skill set.
-- **Todo-list convention:** not new infra — it's the built-in `TodoWrite` tool. superpowers gets
-  on-rails task-lists by instructing skills to "create a task per checklist item." We adopt this as a
-  shared convention; it degrades to a markdown checklist where the tool is absent (Copilot/Codex).
+- **Todo-list convention:** not new infra -- it's the runtime's built-in task-list tool (named
+  differently per runtime; only Copilot CLI lacks one). Skills with a linear multi-step flow create
+  one task per step; degrades to a markdown checklist where no tool exists. Shipped (#15):
+  `docs/specs/2026-05-31-todo-list-convention.md`.
 - **`/tdd`:** a short standalone _testing-mindset lens_ (real behaviors not coverage; fail-first
   bug→repro-test→fix). NOT an executor. `/spec` classifies the work and conditionally invokes it.
 - **`/ship`:** dropped from the roadmap — too custom; the end-to-end implementation flow doesn't
@@ -52,7 +53,7 @@ order; the real design work happens in dedicated per-item specs.
 
 ## Terms Clarified
 
-- **Mechanism vs ceremony**: a _mechanism_ is reusable plumbing (bootstrap hook, task-list
+- **Mechanism vs ceremony**: a _mechanism_ is reusable plumbing (bootstrap hook, todo-list
   convention, subagent fanout). _Ceremony_ is mandatory process layered on top (forced gates,
   required artifacts). slynk adopts mechanisms; it rejects forced ceremony.
   _Avoid_: using "superpowers-style" to mean both at once.
@@ -84,10 +85,11 @@ Independent of each other; npm distribution shipped, the rest pending:
     → `slynk-create-pr`; wrapping up → `slynk-handoff`); a row emits only if that skill is installed.
     Hard part is trigger discrimination -- the skill descriptions already carry it.
   - **Core to the offering** -- it's the discovery layer that makes the whole skill set get reached for.
-- [ ] **todo-list convention** → `docs/specs/<date>-todo-convention.md` _(not yet written)_
-  - Shared convention: skills with checklists instruct the agent to create a `TodoWrite` task per item.
-  - Open questions: where the convention lives (shared reference? per-skill?); graceful degradation to
-    markdown checklist on agents without the tool; which skills opt in.
+- [x] **todo-list convention** -- shipped (#15): `docs/specs/2026-05-31-todo-list-convention.md`.
+  - Per-skill inline instruction + a `CONTEXT.md` term; opt-in = `slynk-spec` + `slynk-create-pr`
+    (brainstorm/handoff opt out). Capability-gated on the runtime's task-list tool (names no tool);
+    degrades to a markdown checklist where none exists. Verified per-runtime support in
+    `docs/runtime-support.md`.
 - [x] ~~**unified config + shared loader**~~ -- **retired.** The bootstrap spec killed `.slynk.yml`;
       `.spec.yml` stays standalone, owned by the spec skill. One config owned by one skill = nothing to
       unify. (See `docs/specs/2026-05-31-bootstrap-session-hook.md`.)

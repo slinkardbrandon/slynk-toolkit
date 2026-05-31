@@ -82,8 +82,12 @@ tools, not runtime brand. No subagent primitive -> use the static table below.
 
 (Source: `docs/runtime-support.md`; static fallback, not a probe.)
 
-**Track the flow** with the todo-list convention where supported (clarify ->
-fan-out -> approaches -> gate -> hand off); else a markdown checklist.
+**Track the flow** loosely (clarify -> fan-out -> approaches -> gate -> hand off):
+
+- Mirror it in a task-list tool where you have one, else a markdown checklist.
+- Keep it light -- the shape shifts as the idea does, so don't lock into a rigid plan.
+- This is brainstorm's own soft tracking, not the toolkit's todo-list convention (which
+  is for linear, static flows).
 
 ## Phase 1 -- Silent framing
 

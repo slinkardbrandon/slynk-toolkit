@@ -40,6 +40,24 @@ works on every runtime regardless.
 - **inline / await:** no parallel primitive -- the runner does the research
   itself or skips. Brainstorm stays fully functional text-only.
 
+## Todo-list tool (`slynk-spec`, `slynk-create-pr`)
+
+These skills track their multi-step flow via the runtime's native task-list tool,
+gating on the tool they observe -- never a hardcoded name. Verified per-runtime
+(primary sources, 2026-05-31).
+
+| Runtime            | Native task-list tool                                                       | Mode              |
+| ------------------ | --------------------------------------------------------------------------- | ----------------- |
+| Claude Code        | `TaskCreate`/`TaskUpdate`/`TaskGet`/`TaskList` (v2.1.142+; was `TodoWrite`) | native, live      |
+| GitHub Copilot CLI | none                                                                        | markdown fallback |
+| OpenCode           | `todowrite`                                                                 | native, live      |
+| Codex              | `update_plan`                                                               | native, live      |
+| VS Code Copilot    | none in core (todo lists are extension-only)                                | markdown fallback |
+
+- **native, live:** the agent creates one task per step and mutates status in place.
+- **markdown fallback:** no native tool -- post the checklist once, then re-post it
+  with boxes ticked at meaningful boundaries (a prior message can't be edited).
+
 ## Claude Code -- ✅ Verified
 
 - Skills load from `~/.claude/skills/slynk-<name>`; invoke as `slynk-<name>`.

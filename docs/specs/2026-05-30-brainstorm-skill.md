@@ -108,6 +108,8 @@ Behavioral / discoverability checks, proportional to a prose skill.
 ### Assumptions
 
 - Depends on the bootstrap router (#3) for auto-suggest delivery; works standalone when invoked directly.
-- **todo-convention dependency (roadmap):** brainstorm uses the todo-list convention for its multi-step flow (clarify -> fan-out -> approaches -> gate -> seed) where the runtime supports it; degrades to a markdown checklist otherwise. If the convention isn't built yet, brainstorm ships with inline step tracking and adopts it when it lands.
+- **Flow tracking (deliberate non-adopter):**
+  - Tracks its own multi-step flow (clarify -> fan-out -> approaches -> gate -> seed) loosely -- a task-list tool where supported, else a markdown checklist.
+  - Does **not** adopt the toolkit's todo-list convention (`docs/specs/2026-05-31-todo-list-convention.md`, shipped #15): that convention is for linear, static flows, and brainstorm is divergent (the shape shifts as the idea does).
 - Research fan-out is inline (no shared mechanism yet -- YAGNI); the dispatch + distill block is written for clean later extraction.
 - Codex/OpenCode fan-out primitives are TBD; fan-out degrades to inline/await there for v1, text-only unaffected.
