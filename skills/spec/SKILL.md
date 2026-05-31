@@ -105,6 +105,16 @@ If neither a GitHub MCP nor `gh` is available, ask the user to paste the
 issue description manually. Do not block -- the spec can still work from a
 text description.
 
+### 0d -- Track your progress
+
+If your runtime has a task-list / todo tool (most do; the name varies) and this is
+a non-trivial spec -- you expect a real grilling round, not a one-shot answer --
+create one task per phase and keep it current: mark each in progress as you start
+it, done as you finish. No such tool -> post the list once as a markdown checklist
+and re-post it with boxes ticked only at meaningful boundaries (not every
+micro-step -- you can't edit a prior message). Trivial one-shot -> skip it, just
+narrate. This tracks the phases below, not the implementation work you plan.
+
 ---
 
 ## Phase 1 -- Silent Exploration

@@ -48,6 +48,12 @@ review-time condensation.
   instead of in a shared helper/config (config over prose, scripts over tokens).
 - **Doc drift**: a runtime-support claim not reflected in `docs/runtime-support.md`
   (the honest matrix), or a skill table / pipeline diagram out of sync with behavior.
+- **Missing todo-list convention**: a `SKILL.md` with a linear, static 4+ step flow
+  that tells the agent to track nothing -- it should carry the todo-list convention
+  (`CONTEXT.md`): track progress as the runtime's native task-list, markdown checklist
+  where no tool exists. Flag a block that hardcodes a tool name (`TodoWrite` etc.) --
+  gate on capability. Don't flag a single-pass flow (handoff) or a divergent one whose
+  steps shift as it runs (brainstorm).
 
 ## Do NOT flag
 

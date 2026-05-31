@@ -57,6 +57,13 @@ reads) -- keep the two in sync; this is the why, that is the checklist.
 - **Helper correctness.** Dependency-free `.mjs`, own-path resolution, no
   hardcoded install path, `execFileSync` over interpolated shell strings,
   apostrophe-safe (no `echo '...' | node`).
+- **Todo-list convention.** A skill with a linear, static 4+ step flow should
+  carry the todo-list convention (see `CONTEXT.md`): track progress as the
+  runtime's native task-list, falling back to a markdown checklist where no tool
+  exists. Flag a heavily multi-step linear skill that tracks nothing. Don't flag a
+  flow that completes in a single uninterrupted pass (handoff) or one whose steps
+  shift as it runs (brainstorm) -- those opt out by design. The block must name no
+  specific tool (that's a Claude-only assumption -- see Cross-agent portability).
 - **Slimness.** Config over prose, scripts over tokens. Flag restated boilerplate
   and verbosity that doesn't carry signal.
 
