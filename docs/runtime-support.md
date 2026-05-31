@@ -4,12 +4,13 @@ slynk works across AI coding agents from one `SKILL.md` per skill. Support is at
 different maturity levels. This page is the honest status -- verified against each
 runtime's actual source/docs, not aspiration.
 
-| Runtime        | Status          | Skills load? | Helper calls        | Install             |
-| -------------- | --------------- | ------------ | ------------------- | ------------------- |
-| Claude Code    | ✅ Verified     | Yes          | Yes (absolute path) | `npx slynk-toolkit` |
-| GitHub Copilot | ⚠️ Partial      | Yes          | Yes (absolute path) | `npx slynk-toolkit` |
-| OpenCode       | ⚠️ Partial      | Yes          | Yes (absolute path) | `npx slynk-toolkit` |
-| Codex          | ⚠️ Experimental | Yes          | Unverified          | `npx slynk-toolkit` |
+| Runtime            | Status          | Skills load?        | Helper calls        | Install             |
+| ------------------ | --------------- | ------------------- | ------------------- | ------------------- |
+| Claude Code        | ✅ Verified     | Yes                 | Yes (absolute path) | `npx slynk-toolkit` |
+| GitHub Copilot CLI | ⚠️ Partial      | Yes                 | Yes (absolute path) | `npx slynk-toolkit` |
+| OpenCode           | ⚠️ Partial      | Yes                 | Yes (absolute path) | `npx slynk-toolkit` |
+| Codex              | ⚠️ Experimental | Yes                 | Unverified          | `npx slynk-toolkit` |
+| VS Code Copilot    | ⚠️ Unverified   | Likely (shared dir) | Unverified          | shares `~/.copilot` |
 
 **Distribution:** `npx slynk-toolkit` is the single install path. The Claude
 marketplace and the old `${CLAUDE_PLUGIN_ROOT}` / PATH-shim machinery are gone.
@@ -25,12 +26,13 @@ primitive -- gate on the tool you actually observe, not the runtime brand. This
 table is the static fallback when a probe isn't possible. Text-only brainstorm
 works on every runtime regardless.
 
-| Runtime        | Subagent primitive     | Fan-out mode          |
-| -------------- | ---------------------- | --------------------- |
-| Claude Code    | Task tool + background | background-while-work |
-| GitHub Copilot | agent mechanism        | launch-and-await      |
-| OpenCode       | none confirmed         | inline / await        |
-| Codex          | none confirmed         | inline / await        |
+| Runtime            | Subagent primitive     | Fan-out mode          |
+| ------------------ | ---------------------- | --------------------- |
+| Claude Code        | Task tool + background | background-while-work |
+| GitHub Copilot CLI | agent mechanism        | launch-and-await      |
+| OpenCode           | none confirmed         | inline / await        |
+| Codex              | none confirmed         | inline / await        |
+| VS Code Copilot    | unverified             | inline / await        |
 
 - **background-while-work:** agents run while the synchronous Q&A continues;
   findings fold in as they land.
@@ -66,6 +68,20 @@ works on every runtime regardless.
 - Helper invocation under Codex's sandboxed exec model is **unverified** -- an
   absolute `node <path>` call may hit an approval prompt. Untested until a real
   Codex install confirms it.
+
+## VS Code Copilot -- ⚠️ Unverified
+
+- Per VS Code docs, agent-mode skills load from `~/.copilot/skills` (shared with
+  the Copilot CLI), so the installer's existing Copilot write should land them --
+  but VS Code Copilot is **not** a named runtime in the installer
+  (`candidateRuntimes` in `lib/installer.mjs`), so it's neither detected nor
+  reported, and the shared-dir path is unconfirmed here.
+- Helper exec (`node <path>`) in agent mode is unverified; the skill degrades to
+  text-only if it can't run.
+- `argument-hint` is a documented VS Code frontmatter field, so it doesn't block
+  loading there (unlike the open question for the Copilot CLI).
+- To claim real support: confirm the skills dir, add a named installer entry,
+  verify helper exec, then upgrade this row.
 
 ## How this was verified
 

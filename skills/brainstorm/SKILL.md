@@ -72,12 +72,13 @@ says what you can do. Only you can see whether you have a subagent/Task primitiv
 (required to fan out) and web tools (required for web targets). Gate on observed
 tools, not runtime brand. No subagent primitive -> use the static table below.
 
-| Runtime        | Subagent primitive     | Fan-out mode          |
-| -------------- | ---------------------- | --------------------- |
-| Claude Code    | Task tool + background | background-while-work |
-| GitHub Copilot | agent mechanism        | launch-and-await      |
-| OpenCode       | none confirmed         | inline / await        |
-| Codex          | none confirmed         | inline / await        |
+| Runtime            | Subagent primitive     | Fan-out mode          |
+| ------------------ | ---------------------- | --------------------- |
+| Claude Code        | Task tool + background | background-while-work |
+| GitHub Copilot CLI | agent mechanism        | launch-and-await      |
+| OpenCode           | none confirmed         | inline / await        |
+| Codex              | none confirmed         | inline / await        |
+| VS Code Copilot    | unverified             | inline / await        |
 
 (Source: `docs/runtime-support.md`; static fallback, not a probe.)
 
@@ -115,10 +116,12 @@ parallel research agents. Offer only when:
 - A real research angle exists (never for user-only questions).
 - You can name a **specific target**: a path/glob, a named ticket query, a
   specific web query -- not a topic.
-- The source is reachable per `sources`: codebase always (in a repo); tickets if
-  `gh`/`glab` authed or a matching MCP exists; web if you have web tools.
-- At most once per roundtrip; silent when nothing's researchable; don't re-offer
-  after a decline unless a new target surfaces.
+- It's reachable: codebase if in a repo; tickets if `gh`/`glab` is authed or
+  `sources.mcp` lists a server covering the target type (jira/github/linear/...);
+  web if you have web tools (your own tool list -- `sources` can't see those).
+- At most once per roundtrip (one user reply). Silent when nothing's
+  researchable. Don't re-offer after a decline unless a new source becomes
+  reachable -- not just a reworded query.
 
 Offer (firm, not shouty -- they opted in):
 
@@ -189,9 +192,9 @@ not approved. The user may collapse the gate ("just build B", "skip to spec");
 
 ## Phase 5 -- Hand off to spec
 
-On approval, offer two paths -- default to continuing here. First check the work
-even warrants a spec: if it's small and obvious, say so and offer to just
-implement it (or stop).
+First, does the work even warrant a spec? If it's small and obvious (a couple of
+files, no open architectural calls), say so and offer to just implement it (or
+stop). Otherwise offer two paths -- default to continuing here:
 
 > Direction approved. Spec it out now, or take the seed to a fresh session?
 
@@ -199,8 +202,11 @@ implement it (or stop).
 
 Continue into `slynk-spec` in this session -- that exact name (the toolkit's spec
 skill always installs as `slynk-spec`; don't grab a lookalike like a plain `spec`
-or `review-spec`). The shaped direction, approaches, findings, and terms are
-already in the conversation -- carry them as its input so it doesn't re-ask.
+or `review-spec`). Invoke it via your runtime's skill mechanism (the Skill tool
+on Claude Code, by-description elsewhere); if you can't invoke it directly, fall
+back to 5b. The shaped direction, approaches, findings, and terms are already in
+the conversation -- carry them as its input so it doesn't re-ask: the approaches
+and findings feed its grilling and Key Decisions rationale, so don't drop them.
 `slynk-spec` owns the plan and its artifact; don't write those yourself.
 
 ### 5b -- Take the seed (fresh session)

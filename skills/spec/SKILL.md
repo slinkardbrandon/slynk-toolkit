@@ -375,7 +375,7 @@ execution context, not a durable design record.
 
 The spec artifact (5a) holds the detail. Present a short, paste-ready prompt
 that points a fresh session at it -- do **not** restate the plan inline. This
-shares its format with the `/handoff` skill.
+shares its format with the `slynk-handoff` skill.
 
 ```
 Implement the spec from the planning session. Read it first:
@@ -401,7 +401,7 @@ Choices:
 - **Just start implementing here** -- begin work in this session
 
 For a fuller session capture (current state, decisions, next steps) rather
-than just the spec pointer, run `/handoff`.
+than just the spec pointer, run `slynk-handoff`.
 
 ---
 
