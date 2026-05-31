@@ -41,6 +41,23 @@ npx slynk-toolkit --help        # flags + detected paths
 
 Re-run `npx slynk-toolkit` after a new release to update.
 
+## Bootstrap nudge
+
+Install also wires a machine-wide **skill-router nudge** so agents reach for a
+slynk skill instead of doing the work ad-hoc. It lists only the skills actually
+installed and fires every session.
+
+| Runtime                    | Mechanism                                          |
+| -------------------------- | -------------------------------------------------- |
+| Claude Code                | `SessionStart` hook in `~/.claude/settings.json`   |
+| Copilot / OpenCode / Codex | a managed block in that agent's global `AGENTS.md` |
+
+The nudge is one hardcoded, opinionated variant -- no dial, no config file. To
+soften or reword it, edit `hooks/bootstrap-hook.mjs` (Claude) or the block text
+in `lib/installer.mjs` (others) and reinstall. To turn it off, `--uninstall` or
+delete the managed region by hand -- both writers touch only the slynk-owned
+block and leave your surrounding instructions intact.
+
 ## Requirements
 
 - **Node ≥18** (npx forces it; the skills ship dependency-free `.mjs` helpers).

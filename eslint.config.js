@@ -68,7 +68,7 @@ export default defineConfig([
     // console.log, spawn processes, and touch computed filesystem paths, and
     // the specs read/write scratch files by computed path. Relax the rules that
     // would flag this legitimate behavior. Must be last to win.
-    files: ["lib/**/*.mjs", "bin/**/*.mjs", "skills/**/*.mjs", "test/**/*.mjs"],
+    files: ["lib/**/*.mjs", "bin/**/*.mjs", "skills/**/*.mjs", "hooks/**/*.mjs", "test/**/*.mjs"],
     rules: {
       "no-console": "off",
       "unicorn/no-process-exit": "off",

@@ -7,7 +7,10 @@ import {
   readFileSync,
   readdirSync,
   existsSync,
+  symlinkSync,
+  lstatSync,
 } from "node:fs";
+import { execFileSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -19,10 +22,17 @@ import {
   listSkills,
   install,
   uninstall,
+  buildAgentsBlock,
+  writeAgentsBlock,
+  removeAgentsBlock,
+  writeCcHook,
+  removeCcHook,
 } from "../lib/installer.mjs";
 
 // The repo's real skills/ dir -- the source the published package ships.
 const REAL_SKILLS = fileURLToPath(new URL("../skills", import.meta.url));
+// The real hook script the installer deploys / settings.json calls.
+const HOOK_SOURCE = fileURLToPath(new URL("../hooks/bootstrap-hook.mjs", import.meta.url));
 
 // A literal backslash, sourced via unicode escape so the lint rule that bans
 // `\\` string escapes stays happy while we assert paths never contain one.
@@ -223,5 +233,255 @@ describe("uninstall", () => {
     const remaining = readdirSync(rt.skills);
     expect(remaining).toContain("my-own-skill");
     expect(remaining.some((entry) => entry.startsWith(PREFIX))).toBe(false);
+  });
+});
+
+// --- bootstrap session hook ------------------------------------------------
+
+const readJson = (file) => JSON.parse(readFileSync(file, "utf8"));
+const slynkMatchers = (settings) =>
+  (settings.hooks?.SessionStart ?? []).filter((matcher) =>
+    matcher.hooks?.some((h) => h.command?.includes("bootstrap-hook.mjs")),
+  );
+
+describe("CC SessionStart hook (settings.json)", () => {
+  let runtimes;
+  let settingsFile;
+  beforeEach(() => {
+    runtimes = resolveRuntimes({ home, env });
+    settingsFile = join(home, ".claude", "settings.json");
+  });
+
+  it("writes the hook while preserving pre-existing keys and the user's own SessionStart entry", () => {
+    writeFileSync(
+      settingsFile,
+      JSON.stringify({
+        model: "opus",
+        hooks: {
+          SessionStart: [{ hooks: [{ type: "command", command: "echo hi" }] }],
+          PreToolUse: [{ matcher: "Bash", hooks: [{ type: "command", command: "lint" }] }],
+        },
+      }),
+    );
+    install({ skillsSource: REAL_SKILLS, runtimes, mode: "copy", hookSource: HOOK_SOURCE });
+
+    const settings = readJson(settingsFile);
+    expect(settings.model).toBe("opus"); // unrelated key survives
+    expect(settings.hooks.PreToolUse).toHaveLength(1); // unrelated hook survives
+    expect(settings.hooks.SessionStart).toHaveLength(2); // user's entry + ours
+    expect(settings.hooks.SessionStart[0].hooks[0].command).toBe("echo hi");
+    const ours = slynkMatchers(settings);
+    expect(ours).toHaveLength(1);
+    expect(ours[0].hooks[0]).toMatchObject({ type: "command", timeout: 10 });
+    expect(ours[0].hooks[0].command).toContain("bootstrap-hook.mjs");
+    expect(ours[0].matcher).toBeUndefined(); // fires on every session source
+  });
+
+  it("is idempotent -- re-running install adds no duplicate slynk entry", () => {
+    install({ skillsSource: REAL_SKILLS, runtimes, mode: "copy", hookSource: HOOK_SOURCE });
+    install({ skillsSource: REAL_SKILLS, runtimes, mode: "copy", hookSource: HOOK_SOURCE });
+    expect(slynkMatchers(readJson(settingsFile))).toHaveLength(1);
+  });
+
+  it("replaces an older slynk hook of a different command shape, no duplicate", () => {
+    writeFileSync(
+      settingsFile,
+      JSON.stringify({
+        hooks: {
+          SessionStart: [
+            { hooks: [{ type: "command", command: "node /old/path/slynk/bootstrap-hook.mjs" }] },
+          ],
+        },
+      }),
+    );
+    writeCcHook({ settingsFile, scriptPath: "/new/path/slynk/bootstrap-hook.mjs" });
+    const ours = slynkMatchers(readJson(settingsFile));
+    expect(ours).toHaveLength(1);
+    expect(ours[0].hooks[0].command).toContain("/new/path/");
+  });
+
+  it("uninstall removes only the slynk hook, leaving the user's hooks and keys intact", () => {
+    writeFileSync(settingsFile, JSON.stringify({ model: "opus" }));
+    install({ skillsSource: REAL_SKILLS, runtimes, mode: "copy", hookSource: HOOK_SOURCE });
+    // Add a user SessionStart entry alongside ours, then uninstall.
+    const withUser = readJson(settingsFile);
+    withUser.hooks.SessionStart.unshift({ hooks: [{ type: "command", command: "echo hi" }] });
+    writeFileSync(settingsFile, JSON.stringify(withUser));
+
+    uninstall({ runtimes });
+
+    const settings = readJson(settingsFile);
+    expect(settings.model).toBe("opus");
+    expect(slynkMatchers(settings)).toHaveLength(0);
+    expect(settings.hooks.SessionStart).toHaveLength(1);
+    expect(settings.hooks.SessionStart[0].hooks[0].command).toBe("echo hi");
+  });
+
+  it("keeps a symlinked settings.json a symlink after writing", () => {
+    const real = join(home, "real-settings.json");
+    writeFileSync(real, JSON.stringify({ model: "opus" }));
+    symlinkSync(real, settingsFile);
+
+    writeCcHook({ settingsFile, scriptPath: "/x/slynk/bootstrap-hook.mjs" });
+
+    expect(lstatSync(settingsFile).isSymbolicLink()).toBe(true);
+    expect(readJson(real).model).toBe("opus"); // wrote through to the real file
+    expect(slynkMatchers(readJson(real))).toHaveLength(1);
+  });
+
+  it("malformed settings.json -> CC hook skipped, skills still install, file not clobbered", () => {
+    writeFileSync(settingsFile, "{ not: valid json, }");
+    const result = install({
+      skillsSource: REAL_SKILLS,
+      runtimes,
+      mode: "copy",
+      hookSource: HOOK_SOURCE,
+    });
+
+    // File left exactly as it was.
+    expect(readFileSync(settingsFile, "utf8")).toBe("{ not: valid json, }");
+    // Skills still landed.
+    const rt = runtimes.find((r) => r.id === "claude");
+    expect(readdirSync(rt.skills).some((entry) => entry.startsWith(PREFIX))).toBe(true);
+    // Status reports the skip.
+    expect(result.nudge.find((n) => n.id === "claude").kind).toBe("skipped");
+  });
+
+  it("link mode points the command at the clone; copy mode at <config>/slynk/", () => {
+    install({ skillsSource: REAL_SKILLS, runtimes, mode: "link", hookSource: HOOK_SOURCE });
+    expect(slynkMatchers(readJson(settingsFile))[0].hooks[0].command).toContain(HOOK_SOURCE);
+
+    install({ skillsSource: REAL_SKILLS, runtimes, mode: "copy", hookSource: HOOK_SOURCE });
+    const copied = join(home, ".claude", "slynk", "bootstrap-hook.mjs");
+    expect(slynkMatchers(readJson(settingsFile))[0].hooks[0].command).toContain(copied);
+    expect(existsSync(copied)).toBe(true); // script copied alongside
+  });
+});
+
+describe("AGENTS.md managed block", () => {
+  it("lists only installed routes, with the slynk- prefix", () => {
+    expect(buildAgentsBlock(["spec"])).toContain("ready to build -> slynk-spec");
+    expect(buildAgentsBlock(["spec"])).not.toContain("slynk-brainstorm");
+    expect(buildAgentsBlock([])).toBeNull(); // no skills -> no block
+  });
+
+  it("is written per non-claude agent; claude gets the hook, not a block", () => {
+    const runtimes = resolveRuntimes({ home, env });
+    install({ skillsSource: REAL_SKILLS, runtimes, mode: "copy", hookSource: HOOK_SOURCE });
+
+    expect(existsSync(join(home, ".claude", "AGENTS.md"))).toBe(false);
+    expect(existsSync(join(home, ".claude", "settings.json"))).toBe(true);
+    expect(readFileSync(join(home, ".copilot", "AGENTS.md"), "utf8")).toContain("## slynk skills");
+    expect(readFileSync(join(home, ".config", "opencode", "AGENTS.md"), "utf8")).toContain(
+      "slynk:bootstrap:start",
+    );
+    // Codex's block lands under CODEX_HOME (~/.codex), not its ~/.agents skills dir.
+    expect(existsSync(join(home, ".codex", "AGENTS.md"))).toBe(true);
+    expect(existsSync(join(home, ".agents", "AGENTS.md"))).toBe(false);
+  });
+
+  it("creates when absent, replaces in place when present (no dupes), leaves user content", () => {
+    const agentsFile = join(home, ".copilot", "AGENTS.md");
+    writeFileSync(agentsFile, "# My rules\n\nAlways use tabs.\n");
+    const block = buildAgentsBlock(["spec", "handoff"]);
+
+    writeAgentsBlock({ agentsFile, block });
+    let content = readFileSync(agentsFile, "utf8");
+    expect(content).toContain("# My rules");
+    expect(content).toContain("Always use tabs.");
+    expect(content.match(/slynk:bootstrap:start/g)).toHaveLength(1);
+
+    // Re-write with a different block -> replaced in place, still single region.
+    writeAgentsBlock({ agentsFile, block: buildAgentsBlock(["spec"]) });
+    content = readFileSync(agentsFile, "utf8");
+    expect(content.match(/slynk:bootstrap:start/g)).toHaveLength(1);
+    expect(content).toContain("# My rules");
+    expect(content).not.toContain("slynk-handoff"); // old route gone
+  });
+
+  it("uninstall strips the block and leaves surrounding content intact", () => {
+    const agentsFile = join(home, ".copilot", "AGENTS.md");
+    writeFileSync(agentsFile, "# My rules\n\nAlways use tabs.\n");
+    writeAgentsBlock({ agentsFile, block: buildAgentsBlock(["spec"]) });
+
+    removeAgentsBlock({ agentsFile });
+    const content = readFileSync(agentsFile, "utf8");
+    expect(content).not.toContain("slynk:bootstrap");
+    expect(content).toBe("# My rules\n\nAlways use tabs.\n");
+  });
+
+  it("uninstall via the installer strips every agent's block", () => {
+    const runtimes = resolveRuntimes({ home, env });
+    install({ skillsSource: REAL_SKILLS, runtimes, mode: "copy", hookSource: HOOK_SOURCE });
+    uninstall({ runtimes });
+    for (const file of [
+      join(home, ".copilot", "AGENTS.md"),
+      join(home, ".codex", "AGENTS.md"),
+      join(home, ".config", "opencode", "AGENTS.md"),
+    ]) {
+      expect(readFileSync(file, "utf8")).not.toContain("slynk:bootstrap");
+    }
+  });
+
+  it("removeCcHook on a missing or unparseable settings.json is a no-op", () => {
+    const missing = join(home, ".claude", "nope.json");
+    expect(() => removeCcHook({ settingsFile: missing })).not.toThrow();
+    const bad = join(home, ".claude", "settings.json");
+    writeFileSync(bad, "{ not json");
+    removeCcHook({ settingsFile: bad });
+    expect(readFileSync(bad, "utf8")).toBe("{ not json"); // untouched
+  });
+});
+
+// Run the real hook script against a scratch Claude config dir. The script's own
+// sibling (the clone's skills/, bare names) has no slynk-* dirs, so it falls back
+// to CLAUDE_CONFIG_DIR -- which is exactly the path we control here.
+function runHook(configDir) {
+  return execFileSync("node", [HOOK_SOURCE], {
+    env: { ...process.env, CLAUDE_CONFIG_DIR: configDir },
+    encoding: "utf8",
+  });
+}
+
+function seedSkills(names) {
+  const configDir = mkdtempSync(join(tmpdir(), "slynk-cfg-"));
+  for (const name of names) {
+    mkdirSync(join(configDir, "skills", PREFIX + name), { recursive: true });
+  }
+  return configDir;
+}
+
+describe("hook script runtime behavior", () => {
+  it("emits valid SessionStart JSON with additionalContext", () => {
+    const configDir = seedSkills(["brainstorm", "spec", "create-pr", "handoff"]);
+    try {
+      const parsed = JSON.parse(runHook(configDir));
+      expect(parsed.hookSpecificOutput.hookEventName).toBe("SessionStart");
+      expect(parsed.hookSpecificOutput.additionalContext).toContain("slynk-brainstorm");
+      expect(parsed.hookSpecificOutput.additionalContext).toContain("slynk-handoff");
+    } finally {
+      rmSync(configDir, { recursive: true, force: true });
+    }
+  });
+
+  it("availability gating: only the installed route appears", () => {
+    const configDir = seedSkills(["spec"]);
+    try {
+      const context = JSON.parse(runHook(configDir)).hookSpecificOutput.additionalContext;
+      expect(context).toContain("slynk-spec");
+      expect(context).not.toContain("slynk-brainstorm");
+      expect(context).not.toContain("slynk-handoff");
+    } finally {
+      rmSync(configDir, { recursive: true, force: true });
+    }
+  });
+
+  it("zero slynk skills -> emits nothing, exits 0", () => {
+    const configDir = seedSkills([]);
+    try {
+      expect(runHook(configDir)).toBe("");
+    } finally {
+      rmSync(configDir, { recursive: true, force: true });
+    }
   });
 });
