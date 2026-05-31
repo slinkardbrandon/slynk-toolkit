@@ -123,7 +123,7 @@ These three are **independent of each other** and can be specced in parallel:
 
 Then, depends on todo-convention + bootstrap:
 
-- [ ] **/brainstorm (divergent ideation front-end)** → `docs/specs/2026-05-30-brainstorm-skill.md` _(specced)_
+- [x] **/brainstorm (divergent ideation front-end)** → `docs/specs/2026-05-30-brainstorm-skill.md` _(built: `skills/brainstorm/`)_
   - The divergent front-end to `/spec`. Pipeline: vague idea → `/brainstorm` (diverge, shape, pick a
     direction) → `/spec` (poke holes, produce implementable artifact) → implement → `/create-pr`.
     slynk's answer to superpowers' `brainstorm`, where `/spec` is their `writing-plans` half.

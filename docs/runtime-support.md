@@ -17,6 +17,27 @@ The installer copies each skill into the agent's skills dir and expands the
 `{{SLYNK_DIR}}` token to that absolute dir, so helpers run by absolute path with
 no PATH dependency -- the load-bearing PATH risk no longer exists.
 
+## Research fan-out capability (`/brainstorm`)
+
+`/brainstorm` can dispatch parallel research agents that return distilled,
+cited findings. The mechanism is capability-gated on the runtime's subagent
+primitive -- gate on the tool you actually observe, not the runtime brand. This
+table is the static fallback when a probe isn't possible. Text-only brainstorm
+works on every runtime regardless.
+
+| Runtime        | Subagent primitive     | Fan-out mode          |
+| -------------- | ---------------------- | --------------------- |
+| Claude Code    | Task tool + background | background-while-work |
+| GitHub Copilot | agent mechanism        | launch-and-await      |
+| OpenCode       | none confirmed         | inline / await        |
+| Codex          | none confirmed         | inline / await        |
+
+- **background-while-work:** agents run while the synchronous Q&A continues;
+  findings fold in as they land.
+- **launch-and-await:** dispatch, wait for results, then continue.
+- **inline / await:** no parallel primitive -- the runner does the research
+  itself or skips. Brainstorm stays fully functional text-only.
+
 ## Claude Code -- ✅ Verified
 
 - Skills load from `~/.claude/skills/slynk-<name>`; invoke as `slynk-<name>`.
