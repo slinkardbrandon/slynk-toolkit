@@ -10,12 +10,12 @@ Four skills, invoked as `slynk-brainstorm`, `slynk-spec`, `slynk-handoff`, and
 `slynk-create-pr` across every runtime (the installer prefixes each so the name
 matches its dir).
 
-| Skill                             | What it does                                                                                                                                              |
-| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`brainstorm`](skills/brainstorm) | Shapes a fuzzy idea into 2-3 approaches with tradeoffs, picks a direction, then hands off to the spec skill                                               |
-| [`spec`](skills/spec)             | Stress-tests a plan, explores the codebase, and emits a paste-ready resume prompt before non-trivial work                                                 |
-| [`handoff`](skills/handoff)       | Captures the session (code or planning) into a standalone doc and emits a paste-ready prompt that starts a fresh agent cold                               |
-| [`create-pr`](skills/create-pr)   | Self-reviews a branch, runs the repo's real CI checks (derived from its config), and opens a PR (GitHub) or MR (GitLab) with a human-sounding description |
+| Skill                             | What it does                                                                                                                                                 |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [`brainstorm`](skills/brainstorm) | Shapes a fuzzy idea into 2-3 approaches with tradeoffs, picks a direction, then continues into `slynk-spec` inline (or hands off a seed for a fresh session) |
+| [`spec`](skills/spec)             | Stress-tests a plan, explores the codebase, and emits a paste-ready resume prompt before non-trivial work                                                    |
+| [`handoff`](skills/handoff)       | Captures the session (code or planning) into a standalone doc and emits a paste-ready prompt that starts a fresh agent cold                                  |
+| [`create-pr`](skills/create-pr)   | Self-reviews a branch, runs the repo's real CI checks (derived from its config), and opens a PR (GitHub) or MR (GitLab) with a human-sounding description    |
 
 ## Install
 

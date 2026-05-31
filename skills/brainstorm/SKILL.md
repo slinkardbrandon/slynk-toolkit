@@ -3,14 +3,14 @@ name: brainstorm
 description: >-
   Diverge on a fuzzy idea BEFORE planning it: shape the fog into 2-3 concrete
   approaches with tradeoffs, recommend a direction, and on your approval
-  continue into the spec skill inline (or hand off a paste-ready seed for a
-  fresh session). Use when the moment is
+  continue into the slynk-spec skill inline (or hand off a paste-ready seed for
+  a fresh session). Use when the moment is
   unshaped, e.g. "rough idea", "not sure how to approach this", "kick around
   some options", "help me think through X". When a question can be answered by
   inspecting a real source, it offers parallel research agents. Not for a single
   question that has a direct answer -- just answer it. Not for stress-testing an
-  existing plan or a direction you've already picked (use the spec skill), and
-  not for capturing a session to continue elsewhere (use the handoff skill).
+  existing plan or a direction you've already picked (use slynk-spec), and not
+  for capturing a session to continue elsewhere (use slynk-handoff).
 argument-hint: a rough idea or problem statement (optional)
 ---
 
@@ -282,7 +282,7 @@ written to disk.** Offer two paths -- default to continuing here:
 > Direction approved. Want me to spec it out now, or take the seed to a fresh
 > session?
 
-- **Spec it now** (recommended) -- continue into the spec skill in this session.
+- **Spec it now** (recommended) -- continue into `slynk-spec` in this session.
 - **Take the seed to a fresh session** -- emit the paste-ready seed (5b).
 
 First judge whether the work even warrants a spec: if the approved direction is
@@ -291,21 +291,25 @@ pushing a spec it doesn't need.
 
 ### 5a -- Spec it now (inline, default)
 
-Continue into the spec skill in the same session. The shaped direction,
-approaches, findings, and any new terms are already in this conversation --
-carry them as spec's input so it doesn't re-ask what brainstorm already settled.
-Lay out the shaped direction (the 5b sections) as the framing, then run spec's
-process on it: its exploration and grilling sharpen the chosen direction, and
-the approaches and findings feed its Key Decisions rationale. Brainstorm hands
-off here -- spec owns the plan and its artifact; don't write that yourself.
+Continue into `slynk-spec` in the same session. Use that exact installed name --
+the toolkit's spec skill is always installed as `slynk-spec`. Don't hand off to a
+similarly-named skill (a plain `spec`, `review-spec`, etc.) that may also be
+present. The shaped direction, approaches, findings, and any new terms are
+already in this conversation -- carry them as its input so it doesn't re-ask what
+brainstorm already settled. Lay out the shaped direction (the 5b sections) as the
+framing, then run its process: its exploration and grilling sharpen the chosen
+direction, and the approaches and findings feed its Key Decisions rationale.
+Brainstorm hands off here -- `slynk-spec` owns the plan and its artifact; don't
+write that yourself.
 
 ### 5b -- Take the seed to a fresh session
 
 For a clean context, a later session, or another machine. Emit a paste-ready
-prompt -- the seed IS the spec skill's inline description, so spec needs no code
-change. The lead-in cues spec by content; don't bake in an invocation token (the
-installed name varies by runtime). Mirrors how `/spec` 5b and `/handoff` emit
-resume prompts -- plain prose the next session reads, no command to run.
+prompt -- the seed IS `slynk-spec`'s inline description, so spec needs no code
+change. The seed block stays a plain description (no invocation line) because
+each runtime invokes skills differently -- a slash on Claude Code, by-description
+elsewhere -- so the user invokes `slynk-spec` themselves and pastes this as its
+input. Mirrors how `slynk-spec` 5b and `slynk-handoff` emit resume prompts.
 
 ```
 Spec this out -- poke holes and produce an implementation plan. Here's the
@@ -330,8 +334,9 @@ shaped direction from a brainstorming session:
 Keep sections that carry signal; omit `Research findings` / `New terms` when
 empty. Then a one-line pointer:
 
-> Paste that into a fresh session. It reads as a spec request and carries the
-> direction, the rejected options, and any findings; spec hardens it into a plan.
+> Paste that into a fresh session and invoke `slynk-spec`. It reads as a spec
+> request and carries the direction, the rejected options, and any findings;
+> `slynk-spec` hardens it into a plan.
 
 ---
 

@@ -6,9 +6,9 @@ description: >-
   structured spec. Use when the user wants to spec something out, plan an
   approach, or "grill"/pressure-test a plan before non-trivial work, e.g.
   "let's spec this out", "help me plan X", "poke holes in this". Not for a
-  fuzzy, unshaped idea with no direction yet; use the brainstorm skill to
-  diverge first. Not for capturing a finished session to continue elsewhere;
-  use the handoff skill for that.
+  fuzzy, unshaped idea with no direction yet; use slynk-brainstorm to diverge
+  first. Not for capturing a finished session to continue elsewhere; use
+  slynk-handoff for that.
 argument-hint: issue number, owner/repo#n, or a description (optional)
 ---
 
@@ -36,7 +36,7 @@ section.)
 /spec "migrate X to use Y"         -- inline description
 ```
 
-If an upstream `/brainstorm` session handed off a seed (chosen direction,
+If an upstream `slynk-brainstorm` session handed off a seed (chosen direction,
 approaches considered, research findings, new terms), consume it as-is, no
 parsing needed -- whether it arrives as the inline description above (pasted
 into a fresh session) or as the framing from a brainstorm continuing in this
