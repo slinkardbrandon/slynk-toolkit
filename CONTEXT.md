@@ -15,10 +15,11 @@ Mandatory process layered on skills -- forced gates, required artifacts, must-in
 slynk rejects forced ceremony as a default.
 _Avoid_: "superpowers-style" to mean both mechanism and ceremony at once.
 
-**Bootstrap mode**:
-The `suggest | force | off` setting controlling how strongly the session-start preamble pushes
-skill discovery. `suggest` = lightweight nudge (default); `force` = the 1%/MUST language.
-_Avoid_: "the hook" -- the Claude Code SessionStart hook is only the delivery layer, not the mode.
+**Bootstrap nudge**:
+The single hardcoded skill-router text injected at session start, auto-installed into every detected
+agent (CC SessionStart hook; a slim `AGENTS.md` block elsewhere). One aggressive variant -- no
+suggest/force/off modes (the dial was dropped). Adjust by editing the source and reinstalling.
+_Avoid_: "bootstrap mode" / "the dial" -- that design is retired.
 
 **Mindset lens**:
 A short reference skill (e.g. `/tdd`) that shapes _how to think_ about a task during planning --

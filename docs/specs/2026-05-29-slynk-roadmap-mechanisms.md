@@ -30,8 +30,10 @@ order; the real design work happens in dedicated per-item specs.
   remove `marketplace.json` + `plugin.json`; consider flattening `plugins/slynk/skills/` → `skills/`.
   Cost: lose `claude plugin update` auto-update (replaced by re-running npx). (Proven by GSD shipping
   to 15 runtimes, npx-only.)
-- **Bootstrap:** ship the mechanism, default to `suggest`, dialable to `force`. A CC SessionStart
-  hook is the "magic" layer on Claude; `AGENTS.md`/instructions carry the nudge on every other agent.
+- **Bootstrap:** ship one hardcoded, aggressive skill-router nudge -- **no dial** (dropped mid-spec:
+  lightweight-by-default + YAGNI on knobs; adjust by editing the source and reinstalling). A CC
+  SessionStart hook fires it deterministically on Claude; a slim `AGENTS.md` block carries it on
+  Codex/OpenCode/Copilot-CLI. Core to the offering -- it's the discovery layer for the whole skill set.
 - **Todo-list convention:** not new infra — it's the built-in `TodoWrite` tool. superpowers gets
   on-rails task-lists by instructing skills to "create a task per checklist item." We adopt this as a
   shared convention; it degrades to a markdown checklist where the tool is absent (Copilot/Codex).
@@ -54,9 +56,9 @@ order; the real design work happens in dedicated per-item specs.
   convention, subagent fanout). _Ceremony_ is mandatory process layered on top (forced gates,
   required artifacts). slynk adopts mechanisms; it rejects forced ceremony.
   _Avoid_: using "superpowers-style" to mean both at once.
-- **Bootstrap mode**: the `suggest | force | off` setting controlling how strongly the session-start
-  preamble pushes skill discovery. `suggest` = lightweight nudge; `force` = the 1%/MUST language.
-  _Avoid_: "the hook" (the CC hook is only the Claude delivery layer for this, not the mode itself).
+- **Bootstrap nudge**: the single hardcoded skill-router text injected at session start. One
+  aggressive variant -- no suggest/force/off modes (the dial was dropped).
+  _Avoid_: "bootstrap mode" / "the dial" -- that design is retired.
 - **Mindset lens** (`/tdd`): a short reference skill that shapes _how to think about what to test_,
   invoked to influence planning — not a skill that writes or runs tests.
   _Avoid_: "the TDD skill" implying an executor.
@@ -72,35 +74,23 @@ Independent of each other; npm distribution shipped, the rest pending:
 - [x] **npm distribution** — `npx slynk-toolkit` shipped (#7, #8): copies each skill into every
       detected agent, `{{SLYNK_DIR}}`-templated helper paths, marketplace dropped. Design:
       `docs/specs/2026-05-30-npx-installer-distribution.md`.
-- [ ] **bootstrap dial (suggest→force)** → `docs/specs/<date>-bootstrap-dial.md` _(not yet written)_
-  - CC SessionStart hook injects the discovery preamble; `AGENTS.md` carries it cross-agent.
-  - `.slynk.yml` `bootstrap: suggest | force | off`, default `suggest`.
-  - **Scope-in (config convergence):** `.slynk.yml` is **the shared toolkit config**, not a
-    bootstrap-only file. Define it here as the single config every skill reads, with `bootstrap`
-    as its first key. The shared loader helper is the unified-config item below.
-  - Open questions: exact preamble wording per mode; how `force` language reads without superpowers'
-    persuasion-table heaviness; per-agent delivery (hook vs AGENTS.md vs instructions files).
-  - **Workflow review steer:** `force` is the highest ceremony risk and has no natural trigger
-    (set-once-and-forget; nags on unrelated sessions). Keep `suggest`/`off` as the real product;
-    treat `force` as a de-emphasized escape hatch, and scope its language to skill-relevance, not a
-    blanket "you MUST check skills" on every session start.
-  - **Scope-in (skill router):** `suggest` is not a limp "skills exist, go look" one-liner. It's a
-    **situational router** that strongly encourages reaching for the right skill at the right moment
-    (fuzzy idea → `/brainstorm`; ready to build → `/spec`; wrapping up → `/create-pr`). This is the
-    superpowers pre-injected-bootstrap value, minus the MUST. **Hard part = trigger discrimination:**
-    "whenever it makes sense" must distinguish a brainstorm-worthy moment from a just-answer-me
-    question, or `suggest` becomes over-eager. Nailing the triggers matters more than the wording.
+- [ ] **bootstrap session hook (skill router)** → `docs/specs/2026-05-31-bootstrap-session-hook.md` _(specced -- ready to build)_
+  - One hardcoded, aggressive skill-router nudge auto-installed into every detected agent. **No dial,
+    no `.slynk.yml`** -- dropped mid-spec (lightweight-by-default + YAGNI on knobs; adjust by editing
+    the source and reinstalling).
+  - **Delivery:** CC SessionStart hook (fires deterministically) + a slim sentinel-delimited `AGENTS.md`
+    block on Codex/OpenCode/Copilot-CLI (Claude reads `CLAUDE.md`, not `AGENTS.md`). One message, two mechanisms.
+  - **Curated, availability-gated routes** (fuzzy → `/brainstorm`; ready → `/spec`; shipping →
+    `/create-pr`; wrapping up → `/handoff`); a row emits only if that `slynk-*` skill is installed.
+    Hard part is trigger discrimination -- the skill descriptions already carry it.
+  - **Core to the offering** -- it's the discovery layer that makes the whole skill set get reached for.
 - [ ] **todo-list convention** → `docs/specs/<date>-todo-convention.md` _(not yet written)_
   - Shared convention: skills with checklists instruct the agent to create a `TodoWrite` task per item.
   - Open questions: where the convention lives (shared reference? per-skill?); graceful degradation to
     markdown checklist on agents without the tool; which skills opt in.
-- [ ] **unified config + shared loader** → `docs/specs/<date>-unified-config.md` _(not yet written)_
-  - One `.slynk.yml` read by (almost) every skill via a shared dependency-free loader helper, so
-    repeatable setup is config-driven, not restated per `SKILL.md`. Folds today's `.spec.yml` into it.
-  - **Introduced by the bootstrap dial** (which defines `.slynk.yml`); generalized into the shared
-    loader here. Principle: config over prose, scripts over tokens (see `CLAUDE.md`).
-  - Open questions: loader location + how skills locate it (`{{SLYNK_DIR}}` sentinel); precedence
-    (repo vs home); migration of `.spec.yml`; which keys each skill owns.
+- [x] ~~**unified config + shared loader**~~ -- **retired.** The bootstrap spec killed `.slynk.yml`;
+      `.spec.yml` stays standalone, owned by the spec skill. One config owned by one skill = nothing to
+      unify. (See `docs/specs/2026-05-31-bootstrap-session-hook.md`.)
 - [ ] **research fanout mechanism** → _deferred; inline in `/brainstorm` for now_
   - Capability-gated convention for dispatching parallel research subagents that burn _their_
     context (codebase / tickets / web) and return **distilled, cited** findings, keeping the primary
