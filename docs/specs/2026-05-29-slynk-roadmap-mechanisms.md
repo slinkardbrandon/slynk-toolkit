@@ -75,7 +75,7 @@ Independent of each other; npm distribution shipped, the rest pending:
 - [x] **npm distribution** — `npx slynk-toolkit` shipped (#7, #8): copies each skill into every
       detected agent, `{{SLYNK_DIR}}`-templated helper paths, marketplace dropped. Design:
       `docs/specs/2026-05-30-npx-installer-distribution.md`.
-- [ ] **bootstrap session hook (skill router)** → `docs/specs/2026-05-31-bootstrap-session-hook.md` _(specced -- ready to build)_
+- [x] **bootstrap session hook (skill router)** -- shipped (#14): `docs/specs/2026-05-31-bootstrap-session-hook.md`.
   - One hardcoded, aggressive skill-router nudge auto-installed into every detected agent. **No dial,
     no `.slynk.yml`** -- dropped mid-spec (lightweight-by-default + YAGNI on knobs; adjust by editing
     the source and reinstalling).
@@ -119,7 +119,7 @@ Then, depends on todo-convention + bootstrap:
     research-source layer (helpers first, MCP only for autonomous calls), orchestration staying prose
     per-runtime? Fuzzy + research-heavy, so it exercises both the skill and the fan-out. If it points to
     a real tool/MCP abstraction, that's a separate slynk repo (see Repo scope above).
-- [ ] **/tdd mindset lens + /spec wiring** → `docs/specs/<date>-tdd-lens.md` _(not yet written)_
+- [ ] **/tdd mindset lens + /spec wiring** → `docs/specs/<date>-tdd-lens.md` _(parked -- #5 was an agent-filed discovery note; revisit the framing before building)_
   - `/tdd`: short standalone reference — real behaviors not coverage; fail-first bug→repro-test→fix.
   - `/spec`: add explicit work classification; **bug/feature → use `/tdd`** to shape Test Cases;
     **chore/config/ticket-only → skip**.
@@ -139,16 +139,20 @@ transcribe the real patterns — do not invent. `spec-review` is less blocked: i
 this session's five-agent runtime review. These are reviewer/author-side companions to the existing
 `spec`/`handoff`/`create-pr`.
 
-- [ ] **spec-review** → `docs/specs/<date>-spec-review.md` _(not yet written)_
+- [ ] **spec-review** (`slynk-spec-review`) → `docs/specs/<date>-spec-review.md` _(not yet written; #6)_
   - Reviews a `/spec` artifact for **quality**, not intent-fit: inconsistencies, tone, redundancy,
-    wordiness, accuracy, completeness — and surfaces missed concerns. It's the critic to `/spec`'s
+    wordiness, accuracy, completeness -- and surfaces missed concerns. It's the critic to `/spec`'s
     author; reviews `/spec`'s own output.
-  - Works on the user's specs, other people's specs, or via **agent fan-out** for independent triage
-    (each agent pressure-tests the spec from a different lens, then synthesize — the pattern used in
-    this session's runtime review).
+  - **Doubles as `/spec`'s final QC gate (Brandon, this session):** the last step of `slynk-spec`,
+    after writing the spec to disk and before handing the user the resume prompt, fans out independent
+    reviews of the on-disk spec -- checking implementability, open questions, internal consistency --
+    as a gate that the spec is actually buildable. Mandatory _inside_ the opt-in skill (two-layer
+    ceremony, not global ceremony); capability-gated on the fan-out primitive; degrades to a single
+    self-review pass or skip where none exists. Couples spec-review to `slynk-spec`'s tail.
+  - Also runnable standalone on the user's specs or other people's specs (same fan-out triage).
   - **Distinct from the machine-local `review-spec` skill**, which judges intent-fit (does the design
-    solve the ticket?). This one judges the artifact's quality. Don't conflate — different surface.
-  - Reuses `/spec`'s tone rules (CLAUDE.md: no AI-isms, no em-dashes, concise) as review criteria.
+    solve the ticket?). This one judges the artifact's quality. Don't conflate -- different surface.
+  - Reuses `/spec`'s tone rules (`AGENTS.md`: no AI-isms, no em-dashes, concise) as review criteria.
 - [ ] **pr-review fanout** → `docs/specs/<date>-pr-review.md` _(not yet written)_
   - Agent fanout + personas. Consider the two-axis split (does it match spec? vs is it well-built?),
     reported separately so one axis can't mask the other.
@@ -158,6 +162,11 @@ this session's five-agent runtime review. These are reviewer/author-side compani
   - Review and address incoming PR feedback — automatically vs talk-through mode.
   - **Workflow steer:** "automatically" mode must still surface what it changed (mirror create-pr's
     show-what-was-fixed).
+- [ ] **slynk-deslop** → _(pre-spec; goals TBD; #18)_
+  - Code-quality / pattern-drift critic on a diff or branch: code in the wrong place, deviating from
+    repo patterns, duplicates, files in the wrong location. Judges whether a change _fits the repo_.
+  - Distinct lens from pr-review (intent + build-quality) and spec-review (artifact quality); the
+    overlap with pr-review gets settled in its spec. Run mode (PR-associated vs branch-local) open.
 
 ### Tier 2.5 — Existing-skill polish (from workflow review)
 
@@ -197,6 +206,9 @@ Most of this shipped with the npx installer (#7, #8); `docs/runtime-support.md` 
       sandbox is still unverified (see runtime-support).
 - [x] **Prefix vs name story** — settled: the installer prefixes `slynk-` and rewrites frontmatter
       `name` to match on every runtime.
+- [x] **AGENTS.md canonical** (#17) — the repo's own working rules live in `AGENTS.md` (read natively
+      by Codex/Cursor/Copilot-CLI/OpenCode/Cline); `CLAUDE.md` is a one-line `@AGENTS.md` import.
+      Portable one-source-of-truth: Claude reads `CLAUDE.md`, everyone else reads `AGENTS.md`, no symlink.
 - [ ] **Doc drift** — partly done (runtime-support + README rewritten for npx). Open: `copilot-setup.md`
       staleness, and `argument-hint` (not universally supported) still in spec/create-pr/brainstorm frontmatter.
 - [ ] **`handoff-context.mjs` skill scan** — scans `~/.agents/skills` only; installer also writes
