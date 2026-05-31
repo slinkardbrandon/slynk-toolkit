@@ -80,8 +80,8 @@ Independent of each other; npm distribution shipped, the rest pending:
     the source and reinstalling).
   - **Delivery:** CC SessionStart hook (fires deterministically) + a slim sentinel-delimited `AGENTS.md`
     block on Codex/OpenCode/Copilot-CLI (Claude reads `CLAUDE.md`, not `AGENTS.md`). One message, two mechanisms.
-  - **Curated, availability-gated routes** (fuzzy → `/brainstorm`; ready → `/spec`; shipping →
-    `/create-pr`; wrapping up → `/handoff`); a row emits only if that `slynk-*` skill is installed.
+  - **Curated, availability-gated routes** (fuzzy → `slynk-brainstorm`; ready → `slynk-spec`; shipping
+    → `slynk-create-pr`; wrapping up → `slynk-handoff`); a row emits only if that skill is installed.
     Hard part is trigger discrimination -- the skill descriptions already carry it.
   - **Core to the offering** -- it's the discovery layer that makes the whole skill set get reached for.
 - [ ] **todo-list convention** → `docs/specs/<date>-todo-convention.md` _(not yet written)_

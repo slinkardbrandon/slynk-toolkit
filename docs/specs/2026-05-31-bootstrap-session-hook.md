@@ -7,7 +7,7 @@
 
 > Spec session -- 2026-05-30
 > Issue: [#3](https://github.com/slinkardbrandon/slynk-toolkit/issues/3)
-> Parent: docs/specs/2026-05-29-slynk-roadmap-mechanisms.md (Tier 1, bootstrap dial)
+> Parent: docs/specs/2026-05-29-slynk-roadmap-mechanisms.md (Tier 1, bootstrap session hook)
 > Reviewed: CC hook contract, cross-agent capabilities, spec quality (3 agents, 2026-05-31)
 
 ## Summary
@@ -52,8 +52,8 @@ slim sentinel-delimited block in each agent's global `AGENTS.md`. No dial, no
   aggressive variant; no suggest/force/off modes.
   _Avoid_: "bootstrap mode" / "the dial" -- that suggest|force|off design was dropped.
   This term **replaces** the "Bootstrap mode" entry currently in CONTEXT.md.
-- **Skill router**: the curated trigger->skill mapping (fuzzy idea -> /brainstorm;
-  ready to build -> /spec; shipping -> /create-pr; wrapping up -> /handoff).
+- **Skill router**: the curated trigger->skill mapping (fuzzy idea -> `slynk-brainstorm`;
+  ready to build -> `slynk-spec`; shipping -> `slynk-create-pr`; wrapping up -> `slynk-handoff`).
 - **Managed block**: the installer-owned, sentinel-delimited region in a target file
   (a JSON hook entry in CC `settings.json`; a markdown comment block in `AGENTS.md`).
   Located by sentinel so reinstall is idempotent and uninstall removes only ours.
@@ -70,8 +70,8 @@ is to stay lean). Only routes whose skill is installed appear.
 
 > slynk skills are installed. Route the user's intent to a skill instead of doing
 > the work ad-hoc -- they encode how this user works:
-> fuzzy/unshaped idea -> /brainstorm; ready to build something non-trivial -> /spec;
-> changes ready to ship -> /create-pr; wrapping up or low on context -> /handoff.
+> fuzzy/unshaped idea -> slynk-brainstorm; ready to build something non-trivial -> slynk-spec;
+> changes ready to ship -> slynk-create-pr; wrapping up or low on context -> slynk-handoff.
 > Reach for these proactively; when a moment plausibly fits, invoke rather than ask.
 
 **AGENTS.md block** (slim, markdown, references skills for detail):
@@ -82,8 +82,8 @@ is to stay lean). Only routes whose skill is installed appear.
 ## slynk skills
 
 Prefer a slynk skill over ad-hoc work when the moment fits:
-fuzzy idea -> brainstorm, ready to build -> spec, shipping -> create-pr,
-wrapping up -> handoff. See each skill for detail.
+fuzzy idea -> slynk-brainstorm, ready to build -> slynk-spec, shipping -> slynk-create-pr,
+wrapping up -> slynk-handoff. See each skill for detail.
 
 <!-- slynk:bootstrap:end -->
 ```
