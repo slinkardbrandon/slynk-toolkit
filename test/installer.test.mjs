@@ -35,6 +35,10 @@ import {
 const REAL_SKILLS = fileURLToPath(new URL("../skills", import.meta.url));
 // The real hook script the installer deploys / settings.json calls.
 const HOOK_SOURCE = fileURLToPath(new URL("../hooks/bootstrap-hook.mjs", import.meta.url));
+// The spec-review helper that resolves the spec under review.
+const SPEC_REVIEW_HELPER = fileURLToPath(
+  new URL("../skills/spec-review/spec-review-context.mjs", import.meta.url),
+);
 // The spec Phase-0 context helper (consumes the shared .spec.yml reader).
 const SPEC_CONTEXT_HELPER = fileURLToPath(
   new URL("../skills/spec/spec-context.mjs", import.meta.url),
@@ -494,6 +498,68 @@ describe("hook script runtime behavior", () => {
     } finally {
       rmSync(configDir, { recursive: true, force: true });
     }
+  });
+});
+
+// --- spec-review-context.mjs (spec resolution) -----------------------------
+
+// Run the helper against a scratch repo and return its parsed JSON.
+function runSpecReview(args) {
+  const out = execFileSync("node", [SPEC_REVIEW_HELPER, ...args], { encoding: "utf8" });
+  return JSON.parse(out);
+}
+
+describe("spec-review-context.mjs", () => {
+  let repo;
+  beforeEach(() => {
+    repo = mkdtempSync(join(tmpdir(), "slynk-spec-"));
+  });
+  afterEach(() => {
+    rmSync(repo, { recursive: true, force: true });
+  });
+
+  it("resolves an explicit spec path and returns its content", () => {
+    const specPath = join(repo, "anywhere.md");
+    writeFileSync(specPath, "# Explicit spec\n\nbody\n");
+    const result = runSpecReview([specPath, "--repo", repo]);
+    expect(result.error).toBeNull();
+    expect(result.spec.path).toBe(specPath);
+    expect(result.spec.content).toContain("# Explicit spec");
+  });
+
+  it("resolves the latest spec in output_dir when no path is given", () => {
+    const dir = join(repo, "docs", "specs");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, "2026-01-01-old.md"), "# old\n");
+    writeFileSync(join(dir, "2026-05-01-new.md"), "# new\n");
+    const result = runSpecReview(["--repo", repo]);
+    expect(result.error).toBeNull();
+    expect(result.spec.relativePath).toBe(join("docs", "specs", "2026-05-01-new.md"));
+    expect(result.spec.content).toContain("# new");
+  });
+
+  it("respects a .spec.yml output_dir override", () => {
+    writeFileSync(join(repo, ".spec.yml"), "output_dir: specs/custom\n");
+    const dir = join(repo, "specs", "custom");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, "2026-05-01-here.md"), "# in override dir\n");
+    const result = runSpecReview(["--repo", repo]);
+    expect(result.error).toBeNull();
+    expect(result.config.outputDir).toBe("specs/custom");
+    expect(result.spec.relativePath).toBe(join("specs", "custom", "2026-05-01-here.md"));
+  });
+
+  it("returns a graceful no-spec signal rather than throwing", () => {
+    // No docs/specs dir, no explicit path -> error string, exit 0, spec null.
+    const result = runSpecReview(["--repo", repo]);
+    expect(result.spec).toBeNull();
+    expect(result.error).toMatch(/no spec/i);
+  });
+
+  it("returns a graceful signal for an explicit path that does not exist", () => {
+    const result = runSpecReview([join(repo, "nope.md"), "--repo", repo]);
+    expect(result.spec).toBeNull();
+    expect(result.error).toMatch(/no spec found/i);
   });
 });
 

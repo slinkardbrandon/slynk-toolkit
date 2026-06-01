@@ -139,7 +139,7 @@ transcribe the real patterns — do not invent. `spec-review` is less blocked: i
 this session's five-agent runtime review. These are reviewer/author-side companions to the existing
 `spec`/`handoff`/`create-pr`.
 
-- [ ] **spec-review** → `docs/specs/<date>-spec-review.md` _(not yet written)_
+- [x] **spec-review** → specced in [`docs/specs/2026-06-01-spec-review-skill.md`](2026-06-01-spec-review-skill.md)
   - Reviews a `/spec` artifact for **quality**, not intent-fit: inconsistencies, tone, redundancy,
     wordiness, accuracy, completeness — and surfaces missed concerns. It's the critic to `/spec`'s
     author; reviews `/spec`'s own output.
@@ -169,7 +169,7 @@ inconsistencies.
       handoff's "Suggested Skills" section). Highest-value / lowest-effort loop fix.
 - [ ] **`/spec` "just start implementing" writes no artifact** — contradicts Rule 8 ("the spec doc
       is the artifact"). Either write the artifact first on that branch, or state plainly no doc is saved.
-- [ ] **Trim spec's trailing prompts** — Phase 5c duplicates Phase 4's menu; fold the redundant
+- [ ] **Trim spec's trailing prompts** — Phase 5d (exit ramps) duplicates Phase 4's menu; fold the redundant
       options and make the Phase 6 glossary offer a single line, not a framed prompt.
 - [ ] **Cross-skill UX consistency** — add "Cancel" to spec's menus (create-pr has it, spec doesn't);
       one shared resume-prompt template between spec and handoff; consistent exit-ramp vocabulary.

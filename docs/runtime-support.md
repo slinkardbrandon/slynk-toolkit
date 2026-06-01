@@ -40,6 +40,12 @@ works on every runtime regardless.
 - **inline / await:** no parallel primitive -- the runner does the research
   itself or skips. Brainstorm stays fully functional text-only.
 
+`slynk-spec`'s buildability gate (Phase 5b) fans out `slynk-spec-review`
+reviewers over the freshly written spec -- it rides this same subagent-primitive
+capability, no separate matrix. With a primitive: ~3 perspective-diverse passes.
+Without one: degrades to a single inline `slynk-spec-review` pass, which still
+gates. `slynk-spec-review` run standalone is always one text-only pass.
+
 ## Todo-list tool (`slynk-spec`, `slynk-create-pr`)
 
 These skills track their multi-step flow via the runtime's native task-list tool,
