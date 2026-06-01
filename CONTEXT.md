@@ -76,3 +76,11 @@ dir, so the skill calls its sibling helper without a PATH lookup. Copy install r
 destination dir; `--link` to the source clone. The standard way every helper-bearing skill finds
 its scripts.
 _Avoid_: `${CLAUDE_PLUGIN_ROOT}` / "the plugin root" -- that dual-path model is retired.
+
+**Shared lib**:
+A `skills/slynk-*/` dir with no `SKILL.md` -- a helper module skills import via a relative
+`../slynk-<name>/file.mjs`. The installer copies it verbatim (never prefixed, rendered, routed, or
+listed as a skill); the relative import resolves against the importing helper's own dir in both
+install modes. The `slynk-` name lets uninstall's prefix sweep clean it and prevents clobbering a
+user dir.
+_Avoid_: calling it a "skill" -- it has no `SKILL.md` and never loads as one.

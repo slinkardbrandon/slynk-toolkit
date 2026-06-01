@@ -15,11 +15,13 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { readSpecConfig, gatherConventionFiles } from "../skills/slynk-mjs-utils/spec-config.mjs";
 import {
   PREFIX,
   renderSkill,
   resolveRuntimes,
   listSkills,
+  listSharedLibs,
   install,
   uninstall,
   buildAgentsBlock,
@@ -33,6 +35,10 @@ import {
 const REAL_SKILLS = fileURLToPath(new URL("../skills", import.meta.url));
 // The real hook script the installer deploys / settings.json calls.
 const HOOK_SOURCE = fileURLToPath(new URL("../hooks/bootstrap-hook.mjs", import.meta.url));
+// The spec Phase-0 context helper (consumes the shared .spec.yml reader).
+const SPEC_CONTEXT_HELPER = fileURLToPath(
+  new URL("../skills/spec/spec-context.mjs", import.meta.url),
+);
 
 // A literal backslash, sourced via unicode escape so the lint rule that bans
 // `\\` string escapes stays happy while we assert paths never contain one.
@@ -167,7 +173,9 @@ describe("copy install (the published default)", () => {
 
   it("frontmatter name equals dirname for every installed skill (Copilot contract)", () => {
     for (const rt of runtimes) {
-      for (const entry of readdirSync(rt.skills)) {
+      // listSkills enumerates SKILL.md-bearing dirs only -- shared libs (no
+      // SKILL.md) are correctly skipped here.
+      for (const entry of listSkills(rt.skills)) {
         const md = readFileSync(join(rt.skills, entry, "SKILL.md"), "utf8");
         const name = md.match(/^name:\s*(.+)$/m)[1].trim();
         expect(name).toBe(entry);
@@ -177,7 +185,7 @@ describe("copy install (the published default)", () => {
 
   it("never emits a backslash in the templated path", () => {
     for (const rt of runtimes) {
-      for (const entry of readdirSync(rt.skills)) {
+      for (const entry of listSkills(rt.skills)) {
         const md = readFileSync(join(rt.skills, entry, "SKILL.md"), "utf8");
         const lines = md.split("\n").filter((line) => line.includes(rt.skills));
         for (const line of lines) expect(line).not.toContain(BACKSLASH);
@@ -189,7 +197,10 @@ describe("copy install (the published default)", () => {
     install({ skillsSource: REAL_SKILLS, runtimes, mode: "copy" });
     const rt = runtimes.find((r) => r.id === "claude");
     const entries = readdirSync(rt.skills).filter((entry) => entry.startsWith(PREFIX));
-    expect(entries.length).toBe(listSkills(REAL_SKILLS).length);
+    // Every slynk-* dir is either an installed skill or a copied shared lib.
+    expect(entries.length).toBe(
+      listSkills(REAL_SKILLS).length + listSharedLibs(REAL_SKILLS).length,
+    );
   });
 });
 
@@ -434,8 +445,8 @@ describe("AGENTS.md managed block", () => {
 });
 
 // Run the real hook script against a scratch Claude config dir. The script's own
-// sibling (the clone's skills/, bare names) has no slynk-* dirs, so it falls back
-// to CLAUDE_CONFIG_DIR -- which is exactly the path we control here.
+// sibling (the clone's skills/, bare skill names + the slynk-mjs-utils lib) has no
+// routable slynk-* skill, so it falls back to CLAUDE_CONFIG_DIR -- the path we control.
 function runHook(configDir) {
   return execFileSync("node", [HOOK_SOURCE], {
     env: { ...process.env, CLAUDE_CONFIG_DIR: configDir },
@@ -482,6 +493,152 @@ describe("hook script runtime behavior", () => {
       expect(runHook(configDir)).toBe("");
     } finally {
       rmSync(configDir, { recursive: true, force: true });
+    }
+  });
+});
+
+// --- shared libs (skills/* dirs with no SKILL.md) --------------------------
+
+// A source tree with one real skill, one prefixed shared lib, and one
+// unprefixed no-SKILL.md dir (the clobber-guard case).
+function makeFixtureWithLibrary() {
+  const root = mkdtempSync(join(tmpdir(), "slynk-libsrc-"));
+  const skill = join(root, "demo");
+  mkdirSync(skill, { recursive: true });
+  writeFileSync(join(skill, "SKILL.md"), "---\nname: demo\n---\nbody\n");
+  const library = join(root, "slynk-mjs-utils");
+  mkdirSync(library, { recursive: true });
+  writeFileSync(join(library, "spec-config.mjs"), "export const x = 1;\n");
+  const rogue = join(root, "utils");
+  mkdirSync(rogue, { recursive: true });
+  writeFileSync(join(rogue, "helper.mjs"), "export const y = 2;\n");
+  return root;
+}
+
+describe("shared libs", () => {
+  it("listSkills excludes no-SKILL.md dirs; listSharedLibs returns them", () => {
+    const source = makeFixtureWithLibrary();
+    try {
+      expect(listSkills(source)).toEqual(["demo"]);
+      expect(listSharedLibs(source).toSorted()).toEqual(["slynk-mjs-utils", "utils"]);
+    } finally {
+      rmSync(source, { recursive: true, force: true });
+    }
+  });
+
+  it("the real skills tree ships slynk-mjs-utils as a lib, not a skill", () => {
+    expect(listSkills(REAL_SKILLS)).not.toContain("slynk-mjs-utils");
+    expect(listSharedLibs(REAL_SKILLS)).toContain("slynk-mjs-utils");
+  });
+
+  it("copy mode lands a prefixed lib verbatim and skips an unprefixed one", () => {
+    const source = makeFixtureWithLibrary();
+    try {
+      const runtimes = resolveRuntimes({ home, env });
+      const result = install({ skillsSource: source, runtimes, mode: "copy" });
+
+      expect(result.sharedLibs).toEqual(["slynk-mjs-utils"]);
+      expect(result.skippedLibs).toEqual(["utils"]);
+      expect(result.skills).toEqual(["demo"]); // lib absent from skill labels
+
+      for (const rt of runtimes) {
+        const library = join(rt.skills, "slynk-mjs-utils");
+        expect(existsSync(library)).toBe(true); // verbatim, unprefixed dir name
+        expect(existsSync(join(library, "spec-config.mjs"))).toBe(true);
+        expect(existsSync(join(rt.skills, `${PREFIX}slynk-mjs-utils`))).toBe(false); // no double prefix
+        expect(existsSync(join(rt.skills, "utils"))).toBe(false); // clobber guard: not copied
+        expect(existsSync(join(library, "SKILL.md"))).toBe(false); // libs carry no SKILL.md
+      }
+    } finally {
+      rmSync(source, { recursive: true, force: true });
+    }
+  });
+
+  it("link mode writes no lib copy (resolved from the clone tree instead)", () => {
+    const source = makeFixtureWithLibrary();
+    try {
+      const runtimes = resolveRuntimes({ home, env });
+      install({ skillsSource: source, runtimes, mode: "link" });
+      for (const rt of runtimes) {
+        expect(existsSync(join(rt.skills, "slynk-mjs-utils"))).toBe(false);
+      }
+    } finally {
+      rmSync(source, { recursive: true, force: true });
+    }
+  });
+
+  it("uninstall sweeps a copied lib via the prefix rule", () => {
+    const source = makeFixtureWithLibrary();
+    try {
+      const runtimes = resolveRuntimes({ home, env });
+      install({ skillsSource: source, runtimes, mode: "copy" });
+      uninstall({ runtimes });
+      for (const rt of runtimes) {
+        expect(existsSync(join(rt.skills, "slynk-mjs-utils"))).toBe(false);
+      }
+    } finally {
+      rmSync(source, { recursive: true, force: true });
+    }
+  });
+});
+
+// --- shared .spec.yml reader (skills/slynk-mjs-utils/spec-config.mjs) -------
+
+describe("readSpecConfig (shared reader)", () => {
+  let repo;
+  beforeEach(() => {
+    repo = mkdtempSync(join(tmpdir(), "slynk-cfg-"));
+  });
+  afterEach(() => {
+    rmSync(repo, { recursive: true, force: true });
+  });
+
+  it("defaults to docs/specs + CONTEXT.md when no .spec.yml exists", () => {
+    expect(readSpecConfig(repo)).toEqual({ outputDir: "docs/specs", contextFile: "CONTEXT.md" });
+  });
+
+  it("honors an output_dir override (the bug fix)", () => {
+    writeFileSync(join(repo, ".spec.yml"), "output_dir: specs/custom\n");
+    expect(readSpecConfig(repo).outputDir).toBe("specs/custom");
+  });
+
+  it("honors a context_file override, and context_file: false returns false", () => {
+    writeFileSync(join(repo, ".spec.yml"), "context_file: false\n");
+    expect(readSpecConfig(repo).contextFile).toBe(false);
+    writeFileSync(join(repo, ".spec.yml"), "context_file: GLOSSARY.md\n");
+    expect(readSpecConfig(repo).contextFile).toBe("GLOSSARY.md");
+  });
+
+  it("strips inline comments and surrounding quotes", () => {
+    writeFileSync(join(repo, ".spec.yml"), 'output_dir: "specs"  # where specs go\n');
+    expect(readSpecConfig(repo).outputDir).toBe("specs");
+  });
+
+  it("gatherConventionFiles returns present files in canonical order", () => {
+    writeFileSync(join(repo, "AGENTS.md"), "agents\n");
+    writeFileSync(join(repo, "CONTEXT.md"), "context\n");
+    expect(Object.keys(gatherConventionFiles(repo))).toEqual(["AGENTS.md", "CONTEXT.md"]);
+  });
+});
+
+// --- spec-context.mjs end-to-end (the bug fix through its real consumer) ----
+
+describe("spec-context.mjs override (end-to-end)", () => {
+  it("resume reader resolves specs in a .spec.yml output_dir override", () => {
+    const repo = mkdtempSync(join(tmpdir(), "slynk-ctx-"));
+    try {
+      writeFileSync(join(repo, ".spec.yml"), "output_dir: specs/custom\n");
+      const dir = join(repo, "specs", "custom");
+      mkdirSync(dir, { recursive: true });
+      writeFileSync(join(dir, "2026-05-01-here.md"), "# in override dir\n");
+
+      const out = execFileSync("node", [SPEC_CONTEXT_HELPER, "--repo", repo], { encoding: "utf8" });
+      const result = JSON.parse(out);
+
+      expect(result.config.outputDir).toBe("specs/custom");
+      expect(result.specHistory.map((s) => s.filename)).toContain("2026-05-01-here.md");
+    } finally {
+      rmSync(repo, { recursive: true, force: true });
     }
   });
 });

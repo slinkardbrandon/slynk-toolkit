@@ -35,6 +35,10 @@ Read `CONTEXT.md` for the project glossary. Challenge new terms against it.
 - Don't pipe content through `echo '...' | node` -- apostrophes break it. Use a scratch file or stdin.
 - Skills locate their own helpers via the `{{SLYNK_DIR}}` sentinel token (see `CONTEXT.md`),
   expanded by the installer to the skill's absolute install dir. No PATH lookup, no `${CLAUDE_PLUGIN_ROOT}`.
+- Logic shared across skills lives in a **shared lib**: a `skills/slynk-*/` dir with no `SKILL.md`,
+  imported via a relative `../slynk-<name>/file.mjs`. The installer copies it verbatim (never prefixed,
+  rendered, or routed); the import resolves against the helper's own dir in both install modes. Name it
+  `slynk-*` so uninstall's prefix sweep cleans it and it can't clobber a user dir (see `CONTEXT.md`).
 
 ## Review guidelines (for agents reviewing changes)
 

@@ -17,6 +17,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { execSync } from "node:child_process";
 
+import { readSpecConfig } from "../slynk-mjs-utils/spec-config.mjs";
+
 const args = process.argv.slice(2);
 const slugIndex = args.indexOf("--slug");
 const contentIndex = args.indexOf("--content");
@@ -47,14 +49,8 @@ try {
   process.exit(1);
 }
 
-// Read spec config
-const configPath = path.join(repoRoot, ".spec.yml");
-let outputDir = "docs/specs";
-if (fs.existsSync(configPath)) {
-  const configContent = fs.readFileSync(configPath, "utf8");
-  const match = configContent.match(/^output_dir:\s*(.+)$/m);
-  if (match) outputDir = cleanYamlValue(match[1]);
-}
+// Read spec config (shared reader -- single source for .spec.yml parsing).
+const { outputDir } = readSpecConfig(repoRoot);
 
 // Build filename
 const date = new Date().toISOString().split("T")[0];
@@ -104,12 +100,4 @@ function readGitConfig(key) {
   } catch {
     return "";
   }
-}
-
-// Strip an inline `# comment` and surrounding quotes from a flat-YAML value.
-function cleanYamlValue(raw) {
-  return raw
-    .replace(/\s+#.*$/, "")
-    .trim()
-    .replaceAll(/^["']|["']$/g, "");
 }
