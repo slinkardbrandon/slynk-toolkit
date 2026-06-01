@@ -218,7 +218,7 @@ and findings feed its grilling and Key Decisions rationale, so don't drop them.
 For a clean context, a later session, or another machine. Emit a paste-ready
 prompt -- the seed IS `slynk-spec`'s inline description, so spec needs no code
 change. No invocation line in the block (the user invokes `slynk-spec`
-themselves; how varies by runtime). Mirrors spec 5b / handoff.
+themselves; how varies by runtime). Mirrors spec's resume prompt / handoff.
 
 ```
 Spec this out -- poke holes and produce an implementation plan. Here's the shaped

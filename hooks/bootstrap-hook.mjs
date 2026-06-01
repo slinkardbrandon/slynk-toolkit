@@ -26,9 +26,14 @@ const ROUTES = [
   { skill: "handoff", when: "wrapping up or low on context" },
 ];
 
-function hasSlynkSkill(skillsDir) {
+// True if the dir holds an installed (prefixed) routable skill. Tests for a
+// route skill, not just any `slynk-*` entry, so a prefixed shared lib (e.g.
+// slynk-mjs-utils, which has no route) doesn't make the clone's source skills/
+// look like an install dir.
+function hasInstalledSkill(skillsDir) {
   try {
-    return readdirSync(skillsDir).some((entry) => entry.startsWith(PREFIX));
+    const entries = new Set(readdirSync(skillsDir));
+    return ROUTES.some((route) => entries.has(PREFIX + route.skill));
   } catch {
     return false;
   }
@@ -39,7 +44,7 @@ function hasSlynkSkill(skillsDir) {
 function resolveSkillsDir() {
   const here = dirname(fileURLToPath(import.meta.url));
   const sibling = join(here, "..", "skills");
-  if (hasSlynkSkill(sibling)) return sibling;
+  if (hasInstalledSkill(sibling)) return sibling;
   const configDir = process.env.CLAUDE_CONFIG_DIR || join(homedir(), ".claude");
   return join(configDir, "skills");
 }

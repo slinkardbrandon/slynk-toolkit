@@ -383,7 +383,65 @@ Example: slug `suppress-auth-errors` → `docs/specs/2026-05-29-suppress-auth-er
 The spec doc does NOT include the resume prompt itself -- that's ephemeral
 execution context, not a durable design record.
 
-### 5b -- Emit the resume prompt
+### 5b -- Buildability gate (QC)
+
+Before emitting the resume prompt, gate on whether the **on-disk spec is
+buildable** -- could a cold agent implement it without guessing? This is a hard
+gate for you: **do not emit the resume prompt (5c) while the aggregate verdict is
+BLOCKED.** The user may override ("ship it anyway", "skip the gate"); you may not
+collapse it yourself. Mirrors brainstorm's gate and Phase 4's "just start
+implementing" -- agent-hard, user-collapsible.
+
+#### Fan out flavored reviewers
+
+Each reviewer runs the `slynk-spec-review` skill (that exact installed name) on
+the spec you just wrote. Default **~3 reviewers** (edit this number here in source
+to change it). Make them perspective-diverse:
+
+- **One baseline** pass always (no flavor).
+- **1-2 work-relevant flavors** you derive from the spec content + the work
+  classification -- e.g. an installer/CLI spec -> `cross-platform` + `security`; a
+  UI spec -> `design` + `a11y`; a data-path spec -> `perf`. Flavors are
+  open-ended, not an enum -- pick what the spec's subject warrants. Diversity
+  catches failure modes N identical passes can't.
+
+Invoke each as: `slynk-spec-review <spec-path> "<flavor>"` (omit the flavor for
+the baseline reviewer). Tell each fanned reviewer to **return only its verdict
+block** -- you own the revise loop, not them.
+
+**Capability gating:** gate on the subagent primitive you actually observe in
+your tool list, not the runtime brand -- reuse brainstorm's Phase 2a table
+(`docs/runtime-support.md`); no separate matrix here.
+
+**No subagent primitive -> degrade to one inline `slynk-spec-review` pass** as the
+floor (baseline lenses, no flavor). One pass still gates; you just lose the
+perspective diversity. The gate never silently disappears.
+
+#### Synthesize the verdicts
+
+Collect each reviewer's verdict block and aggregate:
+
+- **Aggregate BLOCKED iff any reviewer reported a blocking finding** (dedupe
+  findings that overlap across lenses -- same place, same root cause = one).
+  Otherwise aggregate PASS.
+- Group the deduped findings: blocking first, then nits, each keeping its `[lens]`
+  tag so the user sees which perspective raised it.
+
+#### Report + revise loop
+
+Never silent-edit the spec -- it's the user's artifact.
+
+> Reviewed the spec across N lenses. Aggregate: BLOCKED -- 2 blocking, 3 nits:
+> [grouped findings]. Want me to revise the spec to clear the blockers, then
+> re-review?
+
+- **Revise** -> edit the on-disk spec, re-run the fan-out on the updated spec,
+  re-aggregate. Loop until PASS or the user overrides.
+- **Override** ("ship it anyway") -> proceed to 5c despite BLOCKED; note in the
+  handoff that the gate was overridden.
+- **PASS** -> proceed to 5c.
+
+### 5c -- Emit the resume prompt
 
 The spec artifact (5a) holds the detail. Present a short, paste-ready prompt
 that points a fresh session at it -- do **not** restate the plan inline. This
@@ -399,7 +457,7 @@ It has the plan, key decisions, and test cases. Write the tests first, then
 implement. Run lint and tests after each major step.
 ```
 
-### 5c -- Offer exit ramps
+### 5d -- Offer exit ramps
 
 After presenting the resume prompt:
 

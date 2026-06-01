@@ -21,6 +21,12 @@ import fs from "node:fs";
 import path from "node:path";
 import { execSync } from "node:child_process";
 
+import {
+  getRepoRoot,
+  gatherConventionFiles,
+  readSpecConfig,
+} from "../slynk-mjs-utils/spec-config.mjs";
+
 const repoRoot = getRepoRoot();
 if (!repoRoot) {
   console.error(JSON.stringify({ error: "Not inside a git repository" }));
@@ -34,33 +40,16 @@ const result = {
     defaultBranch: getDefaultBranch(),
     hasNodeModules: fs.existsSync(path.join(repoRoot, "node_modules")),
   },
-  conventions: gatherConventionFiles(),
+  conventions: gatherConventionFiles(repoRoot),
   instructions: gatherInstructionFiles(),
   specHistory: getRecentSpecDocs(),
-  config: readSpecConfig(),
+  config: readSpecConfig(repoRoot),
   packageScripts: getPackageScripts(),
 };
 
 console.log(JSON.stringify(result, null, 2));
 
 // --- helpers ---
-
-function getRepoRoot() {
-  const argumentIndex = process.argv.indexOf("--repo");
-  if (argumentIndex !== -1 && process.argv[argumentIndex + 1])
-    return path.resolve(process.argv[argumentIndex + 1]);
-
-  try {
-    // Silence git's own stderr ("fatal: not a git repository") so the
-    // not-in-repo case emits only our clean JSON error, no stray git noise.
-    return execSync("git rev-parse --show-toplevel", {
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "ignore"],
-    }).trim();
-  } catch {
-    return null;
-  }
-}
 
 function getDefaultBranch() {
   const options = { encoding: "utf8", cwd: repoRoot, stdio: ["pipe", "pipe", "pipe"] };
@@ -82,20 +71,6 @@ function getDefaultBranch() {
   } catch {
     return "main";
   }
-}
-
-function gatherConventionFiles() {
-  const names = ["CLAUDE.md", "AGENTS.md", "CONTRIBUTING.md", "CONVENTIONS.md", "CONTEXT.md"];
-  const found = {};
-  for (const name of names) {
-    const filepath = path.join(repoRoot, name);
-    if (fs.existsSync(filepath)) {
-      const content = fs.readFileSync(filepath, "utf8");
-      // Truncate very large files to keep output reasonable
-      found[name] = content.length > 4000 ? `${content.slice(0, 4000)}\n...(truncated)` : content;
-    }
-  }
-  return found;
 }
 
 function gatherInstructionFiles() {
@@ -122,7 +97,7 @@ function gatherInstructionFiles() {
 }
 
 function getRecentSpecDocs() {
-  const config = readSpecConfig();
+  const config = readSpecConfig(repoRoot);
   const specDir = path.join(repoRoot, config.outputDir || "docs/specs");
 
   if (!fs.existsSync(specDir)) return [];
@@ -146,29 +121,6 @@ function getRecentSpecDocs() {
   } catch {
     return [];
   }
-}
-
-function readSpecConfig() {
-  const yamlPath = path.join(repoRoot, ".spec.yml");
-  if (!fs.existsSync(yamlPath)) return { outputDir: "docs/specs", contextFile: "CONTEXT.md" };
-
-  // Simple YAML parser for our flat config (avoids needing js-yaml dep)
-  const content = fs.readFileSync(yamlPath, "utf8");
-  const config = {};
-  for (const line of content.split("\n")) {
-    const match = line.match(/^(\w+):\s*(.+)$/);
-    if (match) {
-      // Strip inline `# comment` and surrounding quotes from the value.
-      let value = match[2]
-        .replace(/\s+#.*$/, "")
-        .trim()
-        .replaceAll(/^["']|["']$/g, "");
-      if (value === "false") value = false;
-      if (value === "true") value = true;
-      config[match[1]] = value;
-    }
-  }
-  return { outputDir: "docs/specs", contextFile: "CONTEXT.md", ...config };
 }
 
 function getPackageScripts() {
