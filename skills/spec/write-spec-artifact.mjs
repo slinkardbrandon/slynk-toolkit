@@ -17,7 +17,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { execSync } from "node:child_process";
 
-import { readSpecConfig } from "../slynk-mjs-utils/spec-config.mjs";
+import { getRepoRoot, readSpecConfig } from "../slynk-mjs-utils/spec-config.mjs";
 
 const args = process.argv.slice(2);
 const slugIndex = args.indexOf("--slug");
@@ -38,13 +38,9 @@ if (!/^[a-z0-9-]+$/i.test(slug)) {
 }
 const contentSource = contentIndex === -1 ? "-" : args[contentIndex + 1];
 
-// Get repo root
-let repoRoot;
-try {
-  repoRoot = execSync("git rev-parse --show-toplevel", {
-    encoding: "utf8",
-  }).trim();
-} catch {
+// Get repo root via the shared helper (silences git's stderr; single source).
+const repoRoot = getRepoRoot();
+if (!repoRoot) {
   console.error(JSON.stringify({ error: "Not inside a git repository" }));
   process.exit(1);
 }

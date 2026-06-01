@@ -574,7 +574,8 @@ function makeFixtureWithLibrary() {
   writeFileSync(join(skill, "SKILL.md"), "---\nname: demo\n---\nbody\n");
   const library = join(root, "slynk-mjs-utils");
   mkdirSync(library, { recursive: true });
-  writeFileSync(join(library, "spec-config.mjs"), "export const x = 1;\n");
+  // Seed a {{SLYNK_DIR}} token: libs copy verbatim, so it must survive un-rendered.
+  writeFileSync(join(library, "spec-config.mjs"), 'export const x = "{{SLYNK_DIR}}";\n');
   const rogue = join(root, "utils");
   mkdirSync(rogue, { recursive: true });
   writeFileSync(join(rogue, "helper.mjs"), "export const y = 2;\n");
@@ -610,7 +611,10 @@ describe("shared libs", () => {
       for (const rt of runtimes) {
         const library = join(rt.skills, "slynk-mjs-utils");
         expect(existsSync(library)).toBe(true); // verbatim, unprefixed dir name
-        expect(existsSync(join(library, "spec-config.mjs"))).toBe(true);
+        // Byte-identical copy: token survives un-rendered (libs aren't templated).
+        expect(readFileSync(join(library, "spec-config.mjs"), "utf8")).toBe(
+          'export const x = "{{SLYNK_DIR}}";\n',
+        );
         expect(existsSync(join(rt.skills, `${PREFIX}slynk-mjs-utils`))).toBe(false); // no double prefix
         expect(existsSync(join(rt.skills, "utils"))).toBe(false); // clobber guard: not copied
         expect(existsSync(join(library, "SKILL.md"))).toBe(false); // libs carry no SKILL.md
@@ -681,9 +685,21 @@ describe("readSpecConfig (shared reader)", () => {
   });
 
   it("gatherConventionFiles returns present files in canonical order", () => {
+    // Include CLAUDE.md: the divergence this guards was AGENTS-vs-CLAUDE order
+    // (old spec-context.mjs listed CLAUDE first). AGENTS.md must come first.
+    writeFileSync(join(repo, "CLAUDE.md"), "claude\n");
     writeFileSync(join(repo, "AGENTS.md"), "agents\n");
     writeFileSync(join(repo, "CONTEXT.md"), "context\n");
-    expect(Object.keys(gatherConventionFiles(repo))).toEqual(["AGENTS.md", "CONTEXT.md"]);
+    expect(Object.keys(gatherConventionFiles(repo))).toEqual([
+      "AGENTS.md",
+      "CLAUDE.md",
+      "CONTEXT.md",
+    ]);
+  });
+
+  it("ignores a trailing CR in a CRLF-authored .spec.yml", () => {
+    writeFileSync(join(repo, ".spec.yml"), "output_dir: specs/custom\r\n");
+    expect(readSpecConfig(repo).outputDir).toBe("specs/custom");
   });
 });
 

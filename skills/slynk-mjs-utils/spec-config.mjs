@@ -2,9 +2,10 @@
  * Shared spec helpers, imported by the spec-family skills via `../slynk-mjs-utils/`.
  *
  * Single source for `.spec.yml` config reading plus the repo-root and
- * convention-file gathering both context helpers used to duplicate. Pure
- * functions (`repoRoot` is passed in), so they're unit-testable by direct
- * import -- no subprocess, no CLI flag.
+ * convention-file gathering both context helpers used to duplicate.
+ * `readSpecConfig`/`gatherConventionFiles` are pure (`repoRoot` is passed in)
+ * and unit-testable by direct import. `getRepoRoot` is the exception: it reads
+ * `process.argv` (`--repo`) and shells out to `git rev-parse`.
  *
  * This dir has no SKILL.md, so the installer treats it as a shared lib: copied
  * verbatim under its `slynk-` name (never prefixed again, never routed). The
@@ -60,7 +61,9 @@ export function readSpecConfig(repoRoot) {
 
   const content = fs.readFileSync(yamlPath, "utf8");
   const config = {};
-  for (const line of content.split("\n")) {
+  // Split on CRLF or LF so a Windows-authored .spec.yml doesn't leave a trailing
+  // \r that defeats the line regex (silently dropping every override).
+  for (const line of content.split(/\r?\n/)) {
     const match = line.match(/^(\w+):\s*(.+)$/);
     if (match) {
       // Strip an inline `# comment` and surrounding quotes from the value.

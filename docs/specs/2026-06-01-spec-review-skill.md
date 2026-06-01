@@ -52,13 +52,14 @@ withholds the resume prompt until PASS or explicit user override.
   Findings tagged with the lens that raised them so synthesis can group/dedupe.
 
 - **Aggregation rule:** any reviewer's blocking finding -> aggregate BLOCKED (dedupe overlaps).
-  Tunable if too strict in practice.
+  Edit the gate source to change.
 - **Not a bootstrap-router entry.** Invoked by `slynk-spec` or run on a spec -- not a fuzzy-moment
   workflow entry point, so no router row. The installer still auto-installs it (it scans `skills/*`).
 - **Opts out of the todo-list convention** -- a single uninterrupted pass, like handoff.
 - **Artifact-quality, disjoint from intent-fit.** Distinct from the machine-local `review-spec`
-  (does the design solve the ticket?). Description carries bidirectional "not for intent-fit / not a
-  workflow entry" pointers so triggers stay disjoint.
+  (does the design solve the ticket?). Description carries a one-directional "not for intent-fit /
+  not a fuzzy-idea entry" pointer (`review-spec` is machine-local, can't point back) so triggers
+  stay disjoint.
 - **Fan-out gating reuses brainstorm's pattern verbatim** -- gate on the observed subagent
   primitive, static fallback table from `docs/runtime-support.md`, distilled claim+source dispatch.
 
@@ -146,7 +147,7 @@ artifact quality. Do not conflate.)
 
 ### Assumptions
 
-- Aggregation: any blocking finding -> BLOCKED (dedupe). Tunable.
+- Aggregation: any blocking finding -> BLOCKED (dedupe). Edit the gate source to change.
 - Fanned subagents can be told to load `slynk-spec-review`; where a runtime can't, the dispatch
   inlines the rubric or spec falls to one inline pass.
 - ~3 reviewers is the opinionated default; edit spec's source to change.

@@ -409,20 +409,9 @@ Invoke each as: `slynk-spec-review <spec-path> "<flavor>"` (omit the flavor for
 the baseline reviewer). Tell each fanned reviewer to **return only its verdict
 block** -- you own the revise loop, not them.
 
-**Capability gating** (reuse brainstorm's Phase 2a pattern -- gate on the
-subagent primitive you actually observe in your tool list, not the runtime
-brand):
-
-| Runtime            | Subagent primitive     | Fan-out mode       |
-| ------------------ | ---------------------- | ------------------ |
-| Claude Code        | Task tool + background | parallel subagents |
-| GitHub Copilot CLI | agent mechanism        | launch-and-await   |
-| OpenCode           | none confirmed         | inline / await     |
-| Codex              | none confirmed         | inline / await     |
-| VS Code Copilot    | unverified             | inline / await     |
-
-(Source: `docs/runtime-support.md`; static fallback, not a probe -- it rides the
-existing fan-out capability row, no new matrix.)
+**Capability gating:** gate on the subagent primitive you actually observe in
+your tool list, not the runtime brand -- reuse brainstorm's Phase 2a table
+(`docs/runtime-support.md`); no separate matrix here.
 
 **No subagent primitive -> degrade to one inline `slynk-spec-review` pass** as the
 floor (baseline lenses, no flavor). One pass still gates; you just lose the
