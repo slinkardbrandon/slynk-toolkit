@@ -7,16 +7,20 @@ Code**, **GitHub Copilot CLI**, **OpenCode**, and **Codex** (experimental).
 ## Skills
 
 Skills are invoked as `slynk-brainstorm`, `slynk-spec`, `slynk-handoff`,
-`slynk-create-pr`, and `slynk-spec-review` across every runtime (the installer
-prefixes each so the name matches its dir).
+`slynk-create-pr`, `slynk-spec-review`, `slynk-teach`, `slynk-write-skill`, and
+`slynk-skill-review` across every runtime (the installer prefixes each so the
+name matches its dir).
 
-| Skill                               | What it does                                                                                                                                                 |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| [`brainstorm`](skills/brainstorm)   | Shapes a fuzzy idea into 2-3 approaches with tradeoffs, picks a direction, then continues into `slynk-spec` inline (or hands off a seed for a fresh session) |
-| [`spec`](skills/spec)               | Stress-tests a plan, explores the codebase, and emits a paste-ready resume prompt before non-trivial work                                                    |
-| [`handoff`](skills/handoff)         | Captures the session (code or planning) into a standalone doc and emits a paste-ready prompt that starts a fresh agent cold                                  |
-| [`create-pr`](skills/create-pr)     | Self-reviews a branch, runs the repo's real CI checks (derived from its config), and opens a PR (GitHub) or MR (GitLab) with a human-sounding description    |
-| [`spec-review`](skills/spec-review) | Judges whether a spec is buildable (a cold agent could implement it without guessing) and returns a PASS/BLOCKED verdict; `slynk-spec` fans it out as a gate |
+| Skill                                 | What it does                                                                                                                                                                |
+| ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`brainstorm`](skills/brainstorm)     | Shapes a fuzzy idea into 2-3 approaches with tradeoffs, picks a direction, then continues into `slynk-spec` inline (or hands off a seed for a fresh session)                |
+| [`spec`](skills/spec)                 | Stress-tests a plan, explores the codebase, and emits a paste-ready resume prompt before non-trivial work                                                                   |
+| [`handoff`](skills/handoff)           | Captures the session (code or planning) into a standalone doc and emits a paste-ready prompt that starts a fresh agent cold                                                 |
+| [`create-pr`](skills/create-pr)       | Self-reviews a branch, runs the repo's real CI checks (derived from its config), and opens a PR (GitHub) or MR (GitLab) with a human-sounding description                   |
+| [`spec-review`](skills/spec-review)   | Judges whether a spec is buildable (a cold agent could implement it without guessing) and returns a PASS/BLOCKED verdict; `slynk-spec` fans it out as a gate                |
+| [`teach`](skills/teach)               | Teaches a topic across sessions from a persistent teaching workspace: mission, curated resources, self-contained HTML lessons, and learning records                         |
+| [`write-skill`](skills/write-skill)   | Authors a new skill the toolkit way: scaffold, router-grade description, deterministic work in `.mjs` helpers, then a mechanical check + review gate                        |
+| [`skill-review`](skills/skill-review) | Judges whether a skill folder is shippable (routes, loads cross-agent, runs without guessing) and returns a PASS/BLOCKED verdict; `slynk-write-skill` fans it out as a gate |
 
 ## Install
 
@@ -61,7 +65,8 @@ block and leave your surrounding instructions intact.
 
 ## Requirements
 
-- **Node ≥18** (npx forces it; the skills ship dependency-free `.mjs` helpers).
+- **Node ≥20** (the dependency-free `.mjs` helpers use `Array#toSorted`,
+  which landed in Node 20).
 - For `spec`: a GitHub MCP server or the `gh` CLI to auto-fetch issues (optional).
 - For `create-pr`: the `gh` CLI (GitHub) or `glab` CLI (GitLab), authenticated.
 

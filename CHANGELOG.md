@@ -3,6 +3,28 @@
 All notable changes to this project are documented here. Versions follow
 [semver](https://semver.org/); tagged releases (`vX.Y.Z`) mark each cut.
 
+## [Unreleased]
+
+### Added
+
+- **`teach`** skill: stateful multi-session tutor. The cwd is a teaching
+  workspace (MISSION.md, RESOURCES.md, lessons/, learning-records/, reference/,
+  GLOSSARY.md); lessons are self-contained HTML, learning records track
+  evidence of understanding. Helpers: `teach-workspace.mjs` (Phase-0 probe +
+  `--scaffold`), `write-lesson.mjs` (numbered artifact writer + browser open).
+- **`write-skill`** skill: authors a new skill the toolkit way -- scaffold,
+  router-grade description, deterministic work in helpers, mechanical check +
+  review gate. Helpers: `skill-scaffold.mjs`, `skill-check.mjs` (the doctrine
+  lint: frontmatter, description triggers, echo-pipes, helper imports,
+  sentinel use).
+- **`skill-review`** skill: judges a skill folder shippable (routes, loads
+  cross-agent, runs without guessing) and returns a PASS/BLOCKED verdict;
+  `slynk-write-skill` fans it out as its review gate. Helper:
+  `skill-review-context.mjs` (loads the folder + delegates the mechanical lint
+  to the sibling `skill-check.mjs`).
+- Bootstrap-nudge routes for `teach` and `write-skill` (`skill-review` is
+  unrouted, like `spec-review`); vitest specs for all five new helpers.
+
 ## [1.1.0] -- 2026-05-30
 
 npx-based distribution. Single install path; marketplace and the dual-path

@@ -97,6 +97,30 @@ An optional, open-ended emphasis passed to `slynk-spec-review` (security, cross-
 flavors across fanned reviewers for perspective-diverse coverage.
 _Avoid_: a fixed lens enum -- flavors derive from the work being reviewed.
 
+**Teaching workspace** (`/teach`):
+The directory `slynk-teach` runs in: MISSION.md (the marker file), RESOURCES.md, lessons/,
+learning-records/, reference/, GLOSSARY.md, NOTES.md. All teaching state lives there as files so
+any future session resumes cold. No MISSION.md = not a workspace; the skill offers to scaffold.
+_Avoid_: "the lesson folder" -- the workspace is the whole stateful unit, not one subdir.
+
+**Learning record** (`/teach`):
+The teaching workspace's ADR: a numbered note of real signal about the learner (passed retrieval,
+prior knowledge, corrected misconception, mission shift). Written stingily, superseded never
+deleted; the records compute where to pitch the next lesson.
+_Avoid_: writing one for mere exposure -- reading a lesson is not evidence.
+
+**Mechanical check** (`/write-skill`):
+The deterministic lint `skill-check.mjs` runs over a skill folder (frontmatter shape, description
+doctrine, echo-pipes, helper imports, sentinel use). The script-checkable floor; judgment lenses
+belong to `slynk-skill-review`, which folds this output in rather than re-deriving it.
+_Avoid_: "the review" -- the check is mechanical, the review is judgment.
+
+**Skill-review verdict** (`/skill-review`):
+`slynk-skill-review`'s structured return -- `PASS`/`BLOCKED` plus severity-grouped, lens-tagged
+findings on shippability (routes? loads cross-agent? runs without guessing?). The contract
+`slynk-write-skill`'s review gate aggregates. Mirrors the spec-review verdict.
+_Avoid_: conflating with the mechanical check -- the verdict subsumes it.
+
 **Spec-review verdict** (`/spec-review`):
 `slynk-spec-review`'s structured return -- `PASS`/`BLOCKED` plus severity-grouped, lens-tagged
 findings. The contract a caller aggregates to gate. `slynk-spec-review` judges artifact quality;
