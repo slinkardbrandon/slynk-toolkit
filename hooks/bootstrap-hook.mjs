@@ -24,6 +24,8 @@ const ROUTES = [
   { skill: "spec", when: "ready to build something non-trivial" },
   { skill: "create-pr", when: "changes ready to ship" },
   { skill: "handoff", when: "wrapping up or low on context" },
+  { skill: "teach", when: "user wants to learn or study a topic" },
+  { skill: "write-skill", when: "creating a new agent skill" },
 ];
 
 // True if the dir holds an installed (prefixed) routable skill. Tests for a
