@@ -102,3 +102,8 @@ _Avoid_: a fixed lens enum -- flavors derive from the work being reviewed.
 findings. The contract a caller aggregates to gate. `slynk-spec-review` judges artifact quality;
 the machine-local `review-spec` judges intent-fit -- different skills, do not conflate.
 _Avoid_: "spec review passed" as a single-reviewer claim -- a gate verdict aggregates several.
+
+**Roundtrip** (grilling):
+One question message plus one user reply -- the unit `slynk-spec` and `slynk-brainstorm` pace
+questioning in (one decision per roundtrip, caps per message, detail on request).
+_Avoid_: "round" -- the multi-question frontier round is the rejected batch pattern.
