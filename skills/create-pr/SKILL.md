@@ -14,6 +14,10 @@ argument-hint: base branch (optional)
 
 # Create Pull / Merge Request
 
+## Voice
+
+{{SLYNK_VOICE}}
+
 ## Overview
 
 A full pre-PR workflow for your own branches. Self-reviews the local diff for
@@ -589,7 +593,7 @@ Combine:
 3. Branch has a ticket key (`ABC-123`) and the template shows an issue-tracker URL pattern → follow that pattern.
 4. Otherwise omit -- do not invent a URL.
 
-**Tone:** Write it the way a senior engineer would -- clear, direct, confident. No AI tells: no bullet-point breakdowns of obvious things, no over-explanation, no "This PR introduces…" or "In this PR, I have…". First person but natural, like Slack: "Adds X so that Y can Z." No em-dashes.
+**Tone:** Write it the way a senior engineer would -- clear, direct, confident. No AI tells: no over-explanation, no "This PR introduces…" or "In this PR, I have…". First person but natural, like Slack: "Adds X so that Y can Z." No em-dashes.
 
 **Notable Changes -- what qualifies:**
 

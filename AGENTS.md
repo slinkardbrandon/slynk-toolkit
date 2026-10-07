@@ -80,6 +80,8 @@ clone, so:
 - **Helper (`.mjs`) edits are live** -- the installed SKILL.md already targets the clone's copy.
 - **SKILL.md edits need a re-run** -- `npm run install:local` rewrites the templated copy. Re-run
   after editing any `SKILL.md`, or after adding/renaming a skill, then reload skills in the agent.
+- **`lib/voice.md` edits need a re-run** -- the snippet is baked into each rendered SKILL.md, even in
+  `--link` mode.
 
 `npm run uninstall:local` removes the `slynk-*` entries. Consumers install with copy mode via
 `npx slynk-toolkit` (no clone, helpers copied alongside each SKILL.md).

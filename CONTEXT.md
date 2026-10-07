@@ -70,12 +70,17 @@ it plans.
 _Avoid_: naming a specific tool in a `SKILL.md` -- names differ per runtime and drift per version, so
 gate on capability. _Avoid_: forcing it on divergent skills (`/brainstorm`) -- it's for static flows.
 
-**Sentinel token** (`{{SLYNK_DIR}}`):
+**Sentinel token** (`{{SLYNK_DIR}}`, `{{SLYNK_VOICE}}`):
 A placeholder in a source `SKILL.md` that the installer expands to the skill's absolute install
 dir, so the skill calls its sibling helper without a PATH lookup. Copy install resolves it to the
 destination dir; `--link` to the source clone. The standard way every helper-bearing skill finds
-its scripts.
+its scripts. `{{SLYNK_VOICE}}` expands to the voice snippet instead (same in both modes).
 _Avoid_: `${CLAUDE_PLUGIN_ROOT}` / "the plugin root" -- that dual-path model is retired.
+
+**Voice snippet**:
+The shared Chat + Artifact rules in `lib/voice.md`, expanded into each SKILL.md at
+`{{SLYNK_VOICE}}`. slynk's voice wins inside slynk artifacts; repo conventions shape content only.
+_Avoid_: "tone file", "style guide" -- AGENTS.md Tone is this repo's, not shipped.
 
 **Shared lib**:
 A `skills/slynk-*/` dir with no `SKILL.md` -- a helper module skills import via a relative

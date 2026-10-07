@@ -28,6 +28,10 @@ section.)
 
 <supporting-info>
 
+## Voice
+
+{{SLYNK_VOICE}}
+
 ## Inputs
 
 ```
@@ -334,6 +338,8 @@ is a fine test case.
 Synthesize everything into a structured implementation plan. Do not engage
 the user -- just produce this.
 
+List items are one line. Omit empty sections. Approach max 5 steps. Target ~40 lines.
+
 ### Plan format:
 
 ```markdown
@@ -356,7 +362,7 @@ the user -- just produce this.
 
 ### Files to touch
 
-- `src/path/to/file.ts` -- <what changes and why>
+- `src/path/to/file.ts` -- <what changes and why; match X at path>
 - `src/path/to/other.ts` -- <what changes>
 - `src/path/to/test.ts` -- <what test coverage to add>
 
@@ -366,11 +372,6 @@ the user -- just produce this.
   with a 401 even if the refresh endpoint is unreachable">
 - <edge case or failure mode worth covering>
 - <integration point to validate>
-
-### Patterns to follow
-
-- <existing pattern in repo to match, with file reference>
-- <convention from CONTRIBUTING.md or similar>
 
 ### How to verify
 
@@ -511,8 +512,9 @@ Collect each reviewer's verdict block and aggregate:
 - **Aggregate BLOCKED iff any reviewer reported a blocking finding** (dedupe
   findings that overlap across lenses -- same place, same root cause = one).
   Otherwise aggregate PASS.
-- Group the deduped findings: blocking first, then nits, each keeping its `[lens]`
-  tag so the user sees which perspective raised it.
+- Group the deduped findings: blockers first, one line each; nits last, shorter
+  than blockers, expanded on request. Each keeps its `[lens]` tag so the user
+  sees which perspective raised it.
 
 #### Report + revise loop
 
@@ -523,7 +525,8 @@ Never silent-edit the spec -- it's the user's artifact.
 > re-review?
 
 - **Revise** -> edit the on-disk spec, re-run the fan-out on the updated spec,
-  re-aggregate. Loop until PASS or the user overrides.
+  re-aggregate. From round 2, report only cleared / new / still-open findings.
+  Loop until PASS or the user overrides.
 - **Override** ("ship it anyway") -> proceed to 5c despite BLOCKED; note in the
   handoff that the gate was overridden.
 - **PASS** -> proceed to 5c.
@@ -552,7 +555,8 @@ After presenting the resume prompt:
 
 Choices:
 
-- **I'll paste this into a fresh session** -- done, session complete
+- **I'll paste this into a fresh session** -- reprint the resume prompt block as
+  the last thing in your reply (the choice UI buries the earlier copy), then done
 - **File as a GitHub issue** -- create one with this context via `gh issue create`
 - **Break into smaller pieces** -- split this plan into separate units of work
 - **Just start implementing here** -- begin work in this session
@@ -643,7 +647,8 @@ Beyond those:
 
 2. **Respect repo conventions.** The plan and handoff prompt should reflect
    the repo's actual patterns (naming, file structure, test approach), not
-   generic best practices.
+   generic best practices. Voice stays this skill's (see Voice), whatever the
+   repo's tone.
 
 3. **The spec doc is the artifact.** Everything important from the
    conversation gets captured there. The user should never need to re-explain
