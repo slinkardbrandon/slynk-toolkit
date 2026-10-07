@@ -125,6 +125,31 @@ describe("renderSkill", () => {
     expect(out).not.toContain(BACKSLASH);
     expect(out).toContain("C:/Users/me/.claude/skills/slynk-demo/h.mjs");
   });
+
+  it("expands {{SLYNK_VOICE}} to the given voice string", () => {
+    const out = renderSkill("## Voice\n\n{{SLYNK_VOICE}}\n", {
+      slynkDir: "/x",
+      name: "demo",
+      voice: "Be terse.",
+    });
+    expect(out).toBe("## Voice\n\nBe terse.\n");
+  });
+
+  it("renders a body without the voice token unchanged", () => {
+    const body = "plain body\n";
+    expect(renderSkill(body, { slynkDir: "/x", name: "demo", voice: "Be terse." })).toBe(body);
+  });
+
+  it("leaves the voice token untouched when voice is not passed", () => {
+    const out = renderSkill("{{SLYNK_VOICE}}\n", { slynkDir: "/x", name: "demo" });
+    expect(out).toBe("{{SLYNK_VOICE}}\n");
+  });
+
+  it("inserts a voice containing $& or $$ literally", () => {
+    const voice = "cost: $$5, match: $&";
+    const out = renderSkill("{{SLYNK_VOICE}}", { slynkDir: "/x", name: "demo", voice });
+    expect(out).toBe(voice);
+  });
 });
 
 describe("resolveRuntimes", () => {
@@ -231,6 +256,63 @@ describe("--link install (dev from a clone)", () => {
     } finally {
       rmSync(source, { recursive: true, force: true });
     }
+  });
+});
+
+// A single-skill source whose SKILL.md is just a Voice section, plus a scratch
+// voice file. Returns { root, voiceSource }.
+function makeVoiceFixture(voiceText = "\n\nVOICE-LINE-1\nVOICE-LINE-2\n\n") {
+  const root = mkdtempSync(join(tmpdir(), "slynk-voice-"));
+  const skill = join(root, "skills", "demo");
+  mkdirSync(skill, { recursive: true });
+  writeFileSync(join(skill, "SKILL.md"), "---\nname: demo\n---\n\n## Voice\n\n{{SLYNK_VOICE}}\n");
+  const voiceSource = join(root, "voice.md");
+  writeFileSync(voiceSource, voiceText);
+  return { root, skillsSource: join(root, "skills"), voiceSource };
+}
+
+const installedMd = (rt) => readFileSync(join(rt.skills, `${PREFIX}demo`, "SKILL.md"), "utf8");
+
+describe("voice expansion", () => {
+  let fixture;
+  let runtimes;
+  beforeEach(() => {
+    fixture = makeVoiceFixture();
+    runtimes = resolveRuntimes({ home, env });
+  });
+  afterEach(() => {
+    rmSync(fixture.root, { recursive: true, force: true });
+  });
+
+  for (const mode of ["copy", "link"]) {
+    it(`leaves no literal {{SLYNK_VOICE}} in installed SKILL.md (${mode} mode)`, () => {
+      install({
+        skillsSource: fixture.skillsSource,
+        runtimes,
+        mode,
+        voiceSource: fixture.voiceSource,
+      });
+      for (const rt of runtimes) expect(installedMd(rt)).not.toContain("{{SLYNK_VOICE}}");
+    });
+  }
+
+  it("writes the trimmed snippet under ## Voice", () => {
+    install({ skillsSource: fixture.skillsSource, runtimes, voiceSource: fixture.voiceSource });
+    const md = installedMd(runtimes[0]);
+    expect(md.endsWith("## Voice\n\nVOICE-LINE-1\nVOICE-LINE-2\n")).toBe(true);
+  });
+
+  it("normalizes a CRLF voice file to LF in the installed SKILL.md", () => {
+    writeFileSync(fixture.voiceSource, "\r\n\r\nVOICE-LINE-1\r\nVOICE-LINE-2\r\n\r\n");
+    install({ skillsSource: fixture.skillsSource, runtimes, voiceSource: fixture.voiceSource });
+    const md = installedMd(runtimes[0]);
+    expect(md).not.toContain("\r");
+    expect(md.endsWith("## Voice\n\nVOICE-LINE-1\nVOICE-LINE-2\n")).toBe(true);
+  });
+
+  it("defaults voiceSource to the real lib/voice.md", () => {
+    install({ skillsSource: fixture.skillsSource, runtimes });
+    expect(installedMd(runtimes[0])).toContain("State each fact once");
   });
 });
 

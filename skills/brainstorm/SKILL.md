@@ -36,6 +36,10 @@ not this.
 
 <supporting-info>
 
+## Voice
+
+{{SLYNK_VOICE}}
+
 ## Inputs
 
 ```
@@ -270,6 +274,6 @@ Persist nothing else.
 - **Derive, don't invent.** Approaches, findings, and terms come from real sources and the conversation.
 - **Own one thing.** Brainstorm diverges and shapes; `slynk-spec` hardens, `slynk-handoff` captures.
 - **Cross-agent.** This file + the one helper load everywhere; fan-out degrades where there's no subagent primitive; text-only always works.
-- **Skimmable.** Comparisons as tables, diagrams as mermaid/ASCII, summaries <= 7 one-line bullets, no prose block over 3 sentences.
+- **Skimmable.** Diagrams as mermaid/ASCII, summaries <= 7 one-line bullets, no prose block over 3 sentences.
 
 </supporting-info>

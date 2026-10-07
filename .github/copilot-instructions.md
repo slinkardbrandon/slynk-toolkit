@@ -58,7 +58,7 @@ This file is the review-time condensation.
 ## Do NOT flag
 
 - `--` (double hyphen) -- the house em-dash substitute, intentional.
-- `{{SLYNK_DIR}}` literals in `SKILL.md` -- installer-expanded sentinel, not a bug.
+- `{{SLYNK_DIR}}` and `{{SLYNK_VOICE}}` literals in `SKILL.md` -- installer-expanded sentinels, not a bug.
 - A skill "not handling" a runtime's missing primitive -- if it degrades to
   text-only, that's by design.
 - Missing unit tests for a prose-only skill change -- skills are prose; the

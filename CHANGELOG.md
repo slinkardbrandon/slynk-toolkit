@@ -3,6 +3,20 @@
 All notable changes to this project are documented here. Versions follow
 [semver](https://semver.org/); tagged releases (`vX.Y.Z`) mark each cut.
 
+## [Unreleased]
+
+### Added
+
+- **Voice snippet** (`lib/voice.md`): shared Chat + Artifact voice rules, expanded by the
+  installer into every skill's `## Voice` section via `{{SLYNK_VOICE}}`.
+
+### Changed
+
+- `slynk-spec`: slimmer Phase 3 plan format (one-line items, ~40-line target) and terser
+  buildability-gate reports (blockers first, delta-only re-review rounds).
+- `slynk-spec-review`: the tone rubric is now the Voice section's Artifacts block; voice findings
+  are nits, contradictory duplication blocks.
+
 ## [1.1.0] -- 2026-05-30
 
 npx-based distribution. Single install path; marketplace and the dual-path

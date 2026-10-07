@@ -25,6 +25,10 @@ as written. One pass, one verdict -- a caller fans out and aggregates, not you.
 
 <supporting-info>
 
+## Voice
+
+{{SLYNK_VOICE}}
+
 ## Inputs
 
 ```
@@ -42,8 +46,7 @@ slynk-spec-review docs/specs/foo.md "cross-platform"
 
 ## Phase 0 -- Resolve the spec
 
-One helper call locates the spec and loads the convention files the tone lens
-needs:
+One helper call locates the spec and loads the repo conventions and glossary:
 
 ```bash
 node "{{SLYNK_DIR}}/spec-review-context.mjs" [<spec-path>]
@@ -60,7 +63,7 @@ Returns one JSON blob:
 - `spec`: `{ path, relativePath, content }` -- the resolved spec. Read `content`;
   it's the review target.
 - `config`: `outputDir` / `contextFile`.
-- `conventions`: AGENTS.md, CONTEXT.md, etc. -- the tone-quality rubric and the
+- `conventions`: AGENTS.md, CONTEXT.md, etc. -- repo content patterns and the
   glossary to check terms against.
 - `error`: a string when no spec was found (`spec` is then `null`). Surface it
   and stop -- ask for an explicit path. Never invent a verdict for a spec you
@@ -79,10 +82,11 @@ pass):
   term used two ways.
 - **Open questions / gaps** -- unresolved decisions parked as assumptions that
   actually block the build; edge cases the plan ignores.
-- **Tone quality (per AGENTS.md)** -- AI-isms, hedging, preamble, prose blocks
-  that should be tables/lists, wordiness that buries signal. Use the repo's own
-  `conventions` as the rubric, not generic style rules. (Formatting like
-  em-dashes is the linter's job, not yours.)
+- **Voice (per this skill's Voice section, Artifacts block)** -- AI-isms,
+  hedging, preamble, prose blocks that should be tables/lists, wordiness that
+  buries signal. Use the Voice section as the rubric; repo `conventions` inform
+  content, not voice. Voice findings are NITS; duplication that contradicts
+  itself is BLOCKING. (Formatting like em-dashes is the linter's job, not yours.)
 
 If a **flavor** was passed, keep the baseline floor and add that emphasis on top
 -- e.g. `security`: auth/secrets/injection/trust-boundary gaps the baseline pass
@@ -111,7 +115,7 @@ Rules:
 
 - `VERDICT:` is always present, exactly `PASS` or `BLOCKED`.
 - **BLOCKED** iff at least one blocking finding exists -- something a cold agent
-  cannot build past without guessing. Tone nits, polish, and "would be nicer"
+  cannot build past without guessing. Voice nits, polish, and "would be nicer"
   are NITS, not blockers.
 - A clean spec: `VERDICT: PASS`, empty `BLOCKING:`, NITS optional.
 - `<where>` points into the spec (section heading or quoted phrase) so a fix is
@@ -126,8 +130,8 @@ Never silent-edit the spec -- it's the user's artifact.
    > Found N blocking, M nits. Want me to revise the spec on disk, or leave it?
 
 2. On yes -> edit the on-disk spec to clear the agreed findings, then re-run this
-   pass on the updated spec and emit a fresh verdict. Loop until PASS or the user
-   stops.
+   pass on the updated spec and emit a fresh verdict; in chat, report only
+   cleared / new / still-open findings. Loop until PASS or the user stops.
 3. On no -> leave the spec untouched. The verdict stands as the record.
 
 When a caller (e.g. `slynk-spec`'s buildability gate) runs you as one fanned
@@ -150,7 +154,7 @@ caller on any runtime can parse it.
 - **Blocking means blocking.** A finding blocks only if it stops a cold agent
   from building. Everything else is a nit.
 - **Derive from the spec and the repo.** Findings cite a place in the spec;
-  the tone rubric is the repo's `conventions`, not generic advice.
+  the voice rubric is this skill's Voice section, not generic advice.
 - **Never silent-edit.** Report, offer, revise on yes, re-review. The spec stays
   the user's.
 

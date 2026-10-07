@@ -11,6 +11,10 @@ stays intact while a fresh agent starts cold from it. Reach for it once you've
 built up handoff-worthy context (tickets, a design, a diagram, parallel edits)
 and want to spin off the next piece without squashing what you're doing.
 
+## Voice
+
+{{SLYNK_VOICE}}
+
 ## Step 1 -- Gather Context
 
 Run the helper to collect git state and the OS temp dir:
@@ -41,8 +45,7 @@ agent needs most and fold the other in.
 
 ## Step 3 -- Build the Document
 
-Write for an AI agent that has NO prior context. Short declarative sentences.
-State facts and next actions, no hedging.
+Write for an AI agent that has NO prior context. State facts and next actions.
 
 **Reference, don't duplicate -- except what only exists here.** If something is
 already captured in an artifact (PR, commit, committed doc, issue, diagram
