@@ -105,8 +105,16 @@ Frame internally first; don't dump it on the user:
 Ask the questions that move fog to shape, each with your recommended answer where
 you have one.
 
-- Batch only independent questions (answering one doesn't change another); ask
-  interdependent ones in sequence.
+- One decision per roundtrip; batch 2-3 questions only when they resolve the
+  same single decision.
+- Dependency order: ask the decision other questions hang off first; questions
+  downstream of an open answer wait.
+- If your runtime has a structured option-prompt tool (the name varies per
+  runtime), present discrete-option questions through it -- recommendation as
+  the first option marked "(Recommended)", rationale in its description. A
+  same-decision batch rides one prompt only if the tool carries several
+  questions per call. Open-ended questions and runtimes without such a tool
+  use plain text.
 - Don't ask what `context` answers -- state it. Challenge ambiguous terms against
   the glossary.
 - Keep it short -- a few roundtrips, not an interrogation.

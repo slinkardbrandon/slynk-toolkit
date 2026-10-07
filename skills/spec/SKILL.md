@@ -15,8 +15,9 @@ argument-hint: issue number, owner/repo#n, or a description (optional)
 <what-to-do>
 
 Stress-test the user's plan by exploring the codebase, asking targeted
-questions about gaps the code can't answer, and producing a structured
-implementation plan with a paste-ready handoff prompt.
+questions about gaps the code can't answer -- one decision per roundtrip --
+and producing a structured implementation plan with a paste-ready handoff
+prompt.
 
 If the codebase already answers a question, state what you found instead of
 asking. The user should only be interrupted for genuine decisions. (Question
@@ -108,7 +109,7 @@ text description.
 ### 0d -- Track your progress
 
 If your runtime has a task-list / todo tool (most do; the name varies) and this is a
-non-trivial spec -- you expect a real grilling round, not a one-shot answer:
+non-trivial spec -- you expect a real grilling, not a one-shot answer:
 
 - One task per phase below; mark each in progress as you start it, done as you finish.
 - No such tool -> post the list once as a markdown checklist, re-posting with boxes
@@ -167,33 +168,126 @@ definition -- you will surface these during grilling.
 
 ---
 
-## Phase 2 -- Batched Grilling
+## Phase 2 -- Iterative Grilling
 
-Present your understanding and ask targeted questions in a single batch.
+Ask one decision per roundtrip. Detail is pull, not push: "why" / "more" /
+"expand" lifts any cap for that answer only.
 
-### Structure of the prompt:
+### Opening message
+
+Orientation, the findings that closed questions, then question 1 -- never a
+findings dump:
 
 ```
-I've read the issue and explored the code. Here's what I understand:
+<2-3 sentences: what we're building and the shape you found.>
 
-[2-4 sentence summary of what needs to happen, using terms from the code]
+Already answered by the code (not asking):
+- <finding -- one line> (max 4 bullets, most relevant first; omit if none)
 
-[If contradictions found]: I noticed <code does X> but the issue says
-<Y> -- I'll ask about that below.
+**<Question 1>?**
 
-A few questions to sharpen the plan. Answer what you can, skip what
-you're unsure about:
+<max 3 lines of context>
 
-1. [Question] -- I'd recommend [X] because [reason from code].
-2. [Question] -- I'd recommend [X] because [reason from code].
-3. [Question about ambiguous term or scope]
-4. [Question about verification / "what does done look like?"]
+My rec: <X> because <Y>.
+
+(1 of ~<est> -- next: <one-word teaser>)
 ```
+
+No questions worth asking at all -> orientation + findings only, then straight
+to the test-first nudge (or Phase 3, if the nudge has nothing either).
+
+### Per-question message
+
+```
+**<Question>?**
+
+<max 3 lines: only the context this question needs>
+
+My rec: <X> because <Y>.
+
+(<n> of ~<est> -- next: <one-word teaser>)
+```
+
+Final roundtrip (whichever hits `n == est`; normally the nudge): the marker
+reads `(<n> of ~<n> -- last one)`.
+
+### Size caps
+
+| Unit                            | Cap                                   |
+| ------------------------------- | ------------------------------------- |
+| Question message (one decision) | ~10 lines / ~80 words                 |
+| Same-decision batch message     | ~12 lines, shared context stated once |
+| User-requested dump             | per-decision cap, per question        |
+| Paragraph                       | 2 sentences                           |
+| Context in a question           | 3 lines                               |
+| Recommendation                  | exactly 1 line                        |
+
+The opening message is exempt; its element caps above are the limit.
+
+### Structured-question UI
+
+If your runtime has a structured option-prompt tool (clickable options; the
+name varies per runtime), present each discrete-option question through it:
+context in the question body, progress marker appended to the question text,
+your recommendation as the first option marked "(Recommended)" with its
+because-rationale in that option's description (no description slot -> append
+it to the question body), real alternatives after -- never yes/no padding. A
+same-decision batch rides one prompt only if the tool carries multiple
+questions per call; otherwise its text template. Open-ended questions, the
+opening orientation (text sent before the first prompt), and user-requested
+full dumps use the text templates. On the structured path the opening message
+stops after the findings bullets; question 1 goes through the prompt tool
+(open-ended question 1 stays in the opening text). No such tool -> text
+templates throughout. Both paths carry the same information.
+
+### Ordering
+
+- Dependency order: a decision other questions hang off goes first; questions
+  downstream of an open answer wait for it.
+- Among currently askable questions (nothing upstream open), highest
+  impact x uncertainty first.
+
+### Progress marker
+
+- Estimate re-computed every roundtrip (answers add and remove questions),
+  clamped to >= the current count, so the count never exceeds it.
+- New question worth asking after "last one" -> keep going with markers
+  re-expanded (`5 of ~6`); the estimate is an estimate.
+- The test-first nudge roundtrip is counted and carries a marker.
+- A same-decision batch is one roundtrip, one marker.
+- Suppressed in a user-requested full dump and every roundtrip after it (the
+  count is spent).
+
+### Batching -- the only two exceptions
+
+2-3 questions in one message only when they resolve the same single decision:
+
+```
+**<The decision>?** (one decision, <k> sub-questions)
+
+<max 3 shared context lines>
+
+1. <sub-question, one line> -- my rec: <X> because <Y>.
+2. <sub-question, one line> -- my rec: <X> because <Y>.
+
+(<n> of ~<est> -- next: <one-word teaser>)
+```
+
+"yes" accepts all sub-recs; answering by number ("yes to 1, B for 2") splits
+them. Marker rules apply to every template (an est=1 opening reads
+`(1 of ~1 -- last one)`).
+
+User-requested full batch ("just give me all of them"): honor it, in text
+form; questions downstream of unanswered ones get conditional phrasing
+("If Q2 = A: ..."); per-decision caps hold; no progress markers in the dump
+or after it (the count is spent).
 
 ### Rules for questions:
 
-- **Every question includes your recommended answer.** The user can say
-  "yes" or push back -- either is faster than open-ended.
+- **Every question carries its recommendation** in the template form -- the
+  `My rec: X because Y.` line, or the "(Recommended)" option on the structured
+  path. The user can say "yes" or push back -- either is faster than
+  open-ended.
 - **Never ask what you already found.** If the code answers it, state it.
 - **Challenge ambiguous terms.** "You said 'error page' -- do you mean the
   `ErrorBoundary` component, the standalone `/error` route, or the inline
@@ -207,38 +301,31 @@ you're unsure about:
 - **Surface contradictions.** "The issue says X, but the code currently
   does Y -- which is the source of truth?"
 
-### Follow-up rounds:
+### Stop conditions
 
-If the user's answers reveal additional complexity or new questions, ask
-**one** focused follow-up batch. Do not loop indefinitely -- if you still
-have gaps after two rounds, note them as assumptions in the plan and move on.
+Stop when every question whose answer changes architecture, data modeling,
+test design, or UX behavior is resolved, or the user signals done ("done",
+"ship it", "stop asking"). Gaps that don't clear that bar become stated
+assumptions in the plan. No roundtrip cap.
 
-If the user's answers are clear and complete after round one, skip the
-follow-up entirely.
+### Test-first nudge
 
-### Test-first nudge:
+Its own roundtrip, after the questions, never merged into a question message;
+counted in the estimate and carries a marker (unless a full dump preceded it).
 
-Surface 3-5 test scenarios you identified during exploration, framed as your
-assumptions (you don't have full business context, so the user must validate or
-correct them). The goal is to think through meaningful behaviors before code,
-not to chase coverage metrics.
+```
+Before code -- I think these behaviors matter; tell me where I'm off:
 
-> "Before we write code, I want to make sure we're testing the right things.
-> Based on what I see in the spec, here's what I _think_ matters -- but I'm
-> making assumptions about intent, so tell me where I'm off:
->
-> - <scenario 1 -- what you assume matters and why>
-> - <scenario 2>
-> - <scenario 3>
->
-> Am I reading the intent right? Anything here that doesn't actually matter,
-> or something important I'm not seeing?"
+- <scenario -- one line, what you assume matters> (3-5 bullets)
 
-A correction like "scenario 2 doesn't matter, you're missing X" is high-value
-signal. The validated scenarios go into the spec artifact and handoff prompt so
-the implementing agent writes them first, not as an afterthought. If the repo
-enforces a coverage bar, respect it but keep scenarios proportional -- for
-config/infra changes, "existing tests still pass" is a fine test case.
+Am I reading the intent right? (<n> of ~<n> -- last one)
+```
+
+A correction ("scenario 2 doesn't matter, you're missing X") is high-value
+signal; validated scenarios go into the spec artifact and handoff prompt so
+tests come first, not as an afterthought. Keep scenarios proportional to the
+repo's coverage bar -- for config/infra changes, "existing tests still pass"
+is a fine test case.
 
 ---
 
@@ -549,8 +636,10 @@ terms (including against the CONTEXT.md glossary), stress-test with concrete
 scenarios, surface contradictions -- follow Phase 2's "Rules for questions."
 Beyond those:
 
-1. **Keep it fast.** Target 2-4 total user interactions. If you have enough
-   after the first batch, skip the follow-up.
+1. **Keep each message small, not the session short.** No roundtrip cap --
+   stop when the remaining questions wouldn't change the outcome or the user
+   signals done. Volume control: ask only what changes architecture, data,
+   tests, or UX; record the rest as assumptions.
 
 2. **Respect repo conventions.** The plan and handoff prompt should reflect
    the repo's actual patterns (naming, file structure, test approach), not
