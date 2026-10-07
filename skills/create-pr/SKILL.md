@@ -583,7 +583,7 @@ Combine:
 
 ## Notable Changes
 
-[Bullet list of functional changes a reviewer needs to understand. See the "what qualifies" table below for include/exclude.]
+[Optional. Max 3 one-line bullets, no nesting. Omit the section when nothing qualifies (see below).]
 ```
 
 **If a ticket/issue reference is present,** add a link, sourced in this order:
@@ -595,17 +595,20 @@ Combine:
 
 **Tone:** Write it the way a senior engineer would -- clear, direct, confident. No AI tells: no over-explanation, no "This PR introduces…" or "In this PR, I have…". First person but natural, like Slack: "Adds X so that Y can Z." No em-dashes.
 
-**Notable Changes -- what qualifies:**
+**Notable Changes -- what qualifies:** only what a reviewer could miss or get burned by in the diff:
 
-| ✅ Include                                 | ❌ Exclude                |
-| ------------------------------------------ | ------------------------- |
-| New API endpoints or function signatures   | Added/updated tests       |
-| Changed business logic or calculation      | Lint fixes or formatting  |
-| New configuration options                  | Internal variable renames |
-| New UI components or screens               | Build script changes      |
-| New integrations or external dependencies  | CI/CD pipeline tweaks     |
-| Removed or deprecated functionality        | Minor code cleanup        |
-| Performance changes with observable impact | Comment-only changes      |
+- Breaking or removed behavior
+- New config, env vars, or migrations
+- A cross-cutting behavior change not visible from the touched files
+
+Everything else is the diff's job: function names, file-by-file walkthroughs, tests added, refactors, docs updates. Never repeat What.
+
+**Budget:** the whole body (excluding links and generated blocks like screenshots) stays under ~15 lines. This applies to every section, including ones a PR template or calling skill adds:
+
+- Each added section: max 3 one-line bullets. Omit it when empty.
+- Notes/questions sections: only items needing a reviewer decision. Drop FYIs.
+- No Test plan section, even if asked for: verification belongs in unit/e2e tests, not the body.
+- A manual pre/post-merge step (infra apply, settings change) goes in a one-line `> **Post-merge:**` callout at the top.
 
 ---
 
