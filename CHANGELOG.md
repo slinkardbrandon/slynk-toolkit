@@ -17,13 +17,19 @@ All notable changes to this project are documented here. Versions follow
   which is indistinguishable from a clean scan, so Step 4 passed silently on any machine
   without it. New `scan-secrets.mjs` separates clean (exit 0) from could-not-scan (exit 2),
   and the pattern fallback always reports `coverage: "partial"`.
+- `create-pr`: the secret scan no longer silently skips when invoked through a symlink.
+  Its "was I run directly?" guard compared `argv[1]` lexically against the module's
+  realpath, so any symlinked path component made them differ and the script exited 0
+  having printed nothing. Both sides are realpath'd now, and the CLI has tests (one
+  through a symlink) where before every test imported the module and never ran it.
 
 ### Changed
 
-- `create-pr`: hard per-section caps on the PR description (30 words prose, 1 bullet /
-  15 words for Notable Changes, ~80-word body with no template). Notable Changes is now
-  outcomes only; the include/exclude table that invited a bullet per change is gone, and
-  test/coverage framing is banned from every section.
+- `create-pr`: tighter PR descriptions. Notable Changes is opt-in (max 3 one-line
+  bullets, omitted when nothing a reviewer could get burned by qualifies), the body
+  budget is ~15 lines and binds sections a template or calling skill adds, notes
+  sections drop FYIs, and test/coverage framing is banned everywhere including a Test
+  plan section a template asks for.
 - `slynk-spec`: slimmer Phase 3 plan format (one-line items, ~40-line target) and terser
   buildability-gate reports (blockers first, delta-only re-review rounds).
 - `slynk-spec-review`: the tone rubric is now the Voice section's Artifacts block; voice findings
