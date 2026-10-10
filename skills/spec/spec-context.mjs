@@ -9,7 +9,7 @@
  *   - instruction files content
  *   - recent spec artifacts (last 5)
  *   - package.json scripts (for knowing what gates exist)
- *   - spec config (.spec.yml if present)
+ *   - spec config (.slynk.yml spec: section, or legacy .spec.yml)
  *
  * Usage: node spec-context.mjs [--repo /path/to/repo]
  *

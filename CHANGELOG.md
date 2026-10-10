@@ -7,6 +7,14 @@ All notable changes to this project are documented here. Versions follow
 
 ### Added
 
+- **drift** skill (`slynk-drift`): doc-drift detection driven by a `drift:` manifest in
+  `.slynk.yml`. `drift-check.mjs` sweeps the full repo for fact drift (dead paths, removed
+  package scripts, broken links/anchors, docs older than their sources) with a planted-stale
+  self-test as a positive control; `drift-run.mjs` owns the watermark, finding-ID dedupe, the
+  rolling tracking-issue comment, and the optional notify POST. Report-only.
+- **`.slynk.yml`**: one toolkit config file with per-skill sections. `readSpecConfig` reads
+  its `spec:` section; a legacy `.spec.yml` still works.
+
 - **Voice snippet** (`lib/voice.md`): shared Chat + Artifact voice rules, expanded by the
   installer into every skill's `## Voice` section via `{{SLYNK_VOICE}}`.
 

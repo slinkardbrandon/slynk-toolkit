@@ -1,0 +1,6 @@
+# Self-test fixture for drift-check.mjs --self-test. Three planted drifts:
+# a dead path, a dead script, and a broken anchor. Everything else must pass.
+drift:
+  docs:
+    - path: README.md
+      sources: ["src/", "package.json"]
