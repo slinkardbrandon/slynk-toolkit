@@ -293,31 +293,30 @@ origin/<base>` if the user is running it themselves in a real terminal.
 
 ### Step 4 -- Secrets Scan
 
-Scan the diff for committed secrets before any review or push.
+```bash
+node "{{SLYNK_DIR}}/scan-secrets.mjs" --base "origin/<base>" --head HEAD
+```
 
-**Try in order:**
+> `{{SLYNK_DIR}}` is the installer-expanded absolute skill dir.
 
-1. **`gitleaks`** (if installed):
+Prints one JSON object: `engine`, `available`, `clean`, `blocking`, `findings`,
+`coverage`, `note`. Exit `0` clean, `1` findings, `2` could not scan.
 
-   ```bash
-   git diff origin/<base>...HEAD | gitleaks detect --pipe --no-banner
-   ```
+Act on it:
 
-2. **Pattern grep fallback** (POSIX ERE -- `\s` is PCRE and matches a literal
-   `s` on BSD/macOS grep, silently missing real secrets, so use
-   `[[:space:]]`):
+- **`blocking: true` with findings** -- hard stop. Show each finding's rule and
+  location. Tell the user to resolve them and rotate anything exposed. Don't
+  continue until they confirm false positives or fix them.
+- **`blocking: true` with no findings** (exit `2`) -- the scan couldn't run.
+  Show `note` and stop. This is not a pass.
+- **`coverage: "partial"`** -- gitleaks is missing and this was a pattern smoke
+  test. Say exactly that when reporting; never call it "no secrets found".
+  Surface `note`, which says how to install the real thing.
+- **`clean: true` with `coverage: "full"`** -- continue.
 
-   ```bash
-   git diff origin/<base>...HEAD | grep -iE 'password[[:space:]]*[:=][[:space:]]*["'"'"'][^"'"'"']{6,}|secret[[:space:]]*[:=][[:space:]]*["'"'"'][^"'"'"']{6,}|api[_-]?key[[:space:]]*[:=][[:space:]]*["'"'"'][^"'"'"']{10,}|token[[:space:]]*[:=][[:space:]]*["'"'"'][^"'"'"']{10,}|BEGIN (RSA |EC |DSA |OPENSSH )?PRIVATE KEY|AKIA[0-9A-Z]{16}'
-   ```
-
-   Note if falling back: "Full secrets scanning requires `gitleaks`. Using basic pattern matching -- install gitleaks for more comprehensive coverage."
-
-**If any matches are found -- hard stop.** Show the matched lines and locations:
-
-> "Potential secrets detected in the diff. Resolve these before opening a PR. You may need to rotate any exposed credentials."
-
-Do not proceed until the user confirms false positives or resolves them.
+Never infer a clean scan from empty output. The helper exists because
+`git diff | gitleaks` exits `127` with empty stdout when gitleaks isn't
+installed, which is indistinguishable from a pass if you only read stdout.
 
 ---
 
@@ -565,25 +564,33 @@ git commit -m "chore: add change file"
 
 ### Step 7 -- Generate PR Description
 
+> **Short is the whole point.** The job is what was done and why, fast. If a
+> line's place is unclear, cut it.
+
 Combine:
 
-1. **PR template** (if found in Step 1): fill each section using the diff, commits, and Step 5 analysis.
+1. **PR template** (if found in Step 1): keep its exact structure and headings,
+   fill every section. A template sets the format, not a license to write more --
+   the budget below binds every section, including ones a template or a calling
+   skill adds.
 2. **No template**: use the default structure below.
 
-**Default structure:**
+**Default structure (also used to fill template sections):**
 
 ```markdown
 ## What
 
-[1-2 sentences describing what this PR does, written as if explaining to a teammate who hasn't seen the code -- not a commit log]
+[ONE sentence, what this PR does, plain. Cap: 30 words.]
 
 ## Why
 
-[1-2 sentences on the motivation: what problem this solves or what value it adds]
+[ONE sentence, the problem it solves or why it was done this way. Cap: 30 words.
+If What and Why collapse into one sentence, write one line and drop a heading.]
 
 ## Notable Changes
 
-[Bullet list of functional changes a reviewer needs to understand. See the "what qualifies" table below for include/exclude.]
+[Optional. Max 3 one-line bullets, no nesting. Omit the whole section when
+nothing qualifies -- see below.]
 ```
 
 **If a ticket/issue reference is present,** add a link, sourced in this order:
@@ -593,19 +600,41 @@ Combine:
 3. Branch has a ticket key (`ABC-123`) and the template shows an issue-tracker URL pattern → follow that pattern.
 4. Otherwise omit -- do not invent a URL.
 
-**Tone:** Write it the way a senior engineer would -- clear, direct, confident. No AI tells: no over-explanation, no "This PR introduces…" or "In this PR, I have…". First person but natural, like Slack: "Adds X so that Y can Z." No em-dashes.
+**Budget:** the whole body, excluding links and generated blocks like
+screenshots, stays under ~15 lines.
 
-**Notable Changes -- what qualifies:**
+- Any prose section (What, Why, Description, Summary, Context): one sentence,
+  30 words.
+- Any bullet section: max 3 one-line bullets, no nesting. Omit it when empty.
+- Notes/questions sections: only items needing a reviewer decision. Drop FYIs.
+- Non-applicable sections: `N/A`. Never invent filler to make a section look
+  complete.
+- A manual pre/post-merge step (infra apply, settings change) goes in a one-line
+  `> **Post-merge:**` callout at the top, not its own section.
 
-| ✅ Include                                 | ❌ Exclude                |
-| ------------------------------------------ | ------------------------- |
-| New API endpoints or function signatures   | Added/updated tests       |
-| Changed business logic or calculation      | Lint fixes or formatting  |
-| New configuration options                  | Internal variable renames |
-| New UI components or screens               | Build script changes      |
-| New integrations or external dependencies  | CI/CD pipeline tweaks     |
-| Removed or deprecated functionality        | Minor code cleanup        |
-| Performance changes with observable impact | Comment-only changes      |
+**Notable Changes -- what qualifies:** only what a reviewer could miss or get
+burned by in the diff.
+
+- Breaking or removed behavior
+- New config, env vars, or migrations
+- A cross-cutting behavior change not visible from the touched files
+
+Everything else is the diff's job: function names, file-by-file walkthroughs,
+tests added, refactors, docs updates. Never repeat What. When nothing clears that
+bar, omit the section -- a thin body means a small PR, which is fine.
+
+**Banned from every section:**
+
+- Anything about tests, test coverage, or testing strategy, including a Test plan
+  section even if a template asks for one. Verification belongs in the tests, not
+  in the body.
+- Lint fixes, formatting, no-behavior-change refactors, CI/build tweaks,
+  comment-only changes, dependency bumps that aren't the point of the PR.
+- AI tells: "This PR introduces...", "In this PR, I have...", bullet-point
+  breakdowns of the obvious, over-explained implementation.
+
+**Tone:** senior engineer in Slack -- clear, direct, confident, first person.
+"Adds X so Y can Z." Never pad to fill a section. No em-dashes.
 
 ---
 
@@ -710,6 +739,10 @@ If found, remind the user:
 
 ## Notes on Secrets Scanning
 
-Step 4 uses `gitleaks` when installed and falls back to pattern grep otherwise.
-For reliable coverage, install it (`brew install gitleaks`, or see
-github.com/gitleaks/gitleaks); it's then used automatically on every run.
+`scan-secrets.mjs` uses `gitleaks` when installed and falls back to a small
+pattern check when it isn't. The fallback is a smoke test, not a scan, and
+always reports `coverage: "partial"` so it can never be mistaken for one.
+
+```bash
+brew install gitleaks   # or see github.com/gitleaks/gitleaks
+```
