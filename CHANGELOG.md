@@ -12,11 +12,11 @@ All notable changes to this project are documented here. Versions follow
 
 ### Fixed
 
-- `create-pr`: the secrets scan no longer reports clean when it never ran. `git diff |
-  gitleaks detect --pipe` exits 127 with empty stdout when gitleaks isn't installed, which
-  is indistinguishable from a clean scan, so Step 4 passed silently on any machine without
-  it. New `scan-secrets.mjs` separates clean (exit 0) from could-not-scan (exit 2), and the
-  pattern fallback always reports `coverage: "partial"`.
+- `create-pr`: the secrets scan no longer reports clean when it never ran. Piping a diff
+  into `gitleaks detect --pipe` exits 127 with empty stdout when gitleaks isn't installed,
+  which is indistinguishable from a clean scan, so Step 4 passed silently on any machine
+  without it. New `scan-secrets.mjs` separates clean (exit 0) from could-not-scan (exit 2),
+  and the pattern fallback always reports `coverage: "partial"`.
 
 ### Changed
 
