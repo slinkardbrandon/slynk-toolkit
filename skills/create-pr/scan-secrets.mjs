@@ -18,8 +18,16 @@
  */
 
 import { spawnSync } from "node:child_process";
-import { realpathSync } from "node:fs";
-import { resolve } from "node:path";
+import { mkdtempSync, readFileSync, realpathSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
+
+/**
+ * Exit code we ask gitleaks to use for "leaks found". Its default is 1, which
+ * is also what it exits on a fatal error, so 1 alone can't tell "found a
+ * secret" from "never scanned". 99 is unused by gitleaks itself.
+ */
+const GITLEAKS_FINDINGS_EXIT = 99;
 
 /**
  * Fallback patterns, used only when gitleaks is absent. Deliberately few and
@@ -94,16 +102,18 @@ function gitleaksFailed(note) {
  * Returns `{ findings }` only for a report we actually read, `{ failure }`
  * otherwise. That distinction is the whole point of this file: defaulting
  * unreadable output to `[]` is how a broken scanner reports a clean branch.
+ *
+ * `report` is the report file's contents, or null when it could not be read.
  */
-export function parseGitleaksReport(result) {
-  const raw = (result.stdout || "").trim();
+export function parseGitleaksReport({ status, report }) {
+  const raw = (report ?? "").trim();
 
   if (!raw) {
     return {
       failure:
-        result.status === 1
-          ? "gitleaks exited 1 (it found something) but wrote an empty report, so the findings are unknown."
-          : "gitleaks wrote no report, so nothing was verified. This is not a clean scan.",
+        status === GITLEAKS_FINDINGS_EXIT
+          ? `gitleaks exited ${GITLEAKS_FINDINGS_EXIT} (it found something) but the report was empty or missing, so the findings are unknown.`
+          : `gitleaks exited ${status} but the report was empty or missing, so nothing was verified. This is not a clean scan.`,
     };
   }
 
@@ -112,13 +122,20 @@ export function parseGitleaksReport(result) {
     parsed = JSON.parse(raw);
   } catch {
     return {
-      failure: `gitleaks report was not valid JSON, so its findings could not be read (exit ${result.status}).`,
+      failure: `gitleaks report was not valid JSON, so its findings could not be read (exit ${status}).`,
     };
   }
 
   if (!Array.isArray(parsed)) {
     return {
-      failure: `gitleaks report was ${typeof parsed}, expected an array of findings (exit ${result.status}).`,
+      failure: `gitleaks report was ${typeof parsed}, expected an array of findings (exit ${status}).`,
+    };
+  }
+
+  // Exit says findings, report says none: one of them is wrong, so trust neither.
+  if (status === GITLEAKS_FINDINGS_EXIT && parsed.length === 0) {
+    return {
+      failure: `gitleaks exited ${GITLEAKS_FINDINGS_EXIT} (it found something) but reported no findings, so the result is contradictory.`,
     };
   }
 
@@ -131,33 +148,63 @@ export function parseGitleaksReport(result) {
   };
 }
 
-function scanWithGitleaks(diff, repoPath) {
-  const result = run(
-    "gitleaks",
-    ["detect", "--pipe", "--no-banner", "--report-format", "json", "--report-path", "/dev/stdout"],
-    { cwd: repoPath, input: diff },
-  );
-
-  // 0 = clean, 1 = findings. Anything else means gitleaks itself failed, and
-  // that must not be reported as clean.
-  if (result.status !== 0 && result.status !== 1) {
-    return gitleaksFailed(
-      `gitleaks exited ${result.status}: ${(result.stderr || "").trim() || "no stderr"}`,
-    );
+function readReport(reportPath) {
+  try {
+    return readFileSync(reportPath, "utf8");
+  } catch {
+    return null;
   }
+}
 
-  const report = parseGitleaksReport(result);
-  if (report.failure) return gitleaksFailed(report.failure);
+/**
+ * The report goes to a temp file, never /dev/stdout. Under spawnSync the
+ * child's stdout is a socket on Linux, opening /dev/stdout on a socket fails
+ * (ENXIO), and gitleaks dies with exit 1 before scanning anything.
+ */
+function scanWithGitleaks(diff, repoPath) {
+  const reportDir = mkdtempSync(join(tmpdir(), "slynk-gitleaks-"));
+  const reportPath = join(reportDir, "report.json");
 
-  return {
-    engine: "gitleaks",
-    available: true,
-    clean: report.findings.length === 0,
-    blocking: report.findings.length > 0,
-    findings: report.findings,
-    coverage: "full",
-    note: null,
-  };
+  try {
+    const result = run(
+      "gitleaks",
+      [
+        "detect",
+        "--pipe",
+        "--no-banner",
+        "--report-format",
+        "json",
+        "--report-path",
+        reportPath,
+        "--exit-code",
+        String(GITLEAKS_FINDINGS_EXIT),
+      ],
+      { cwd: repoPath, input: diff },
+    );
+
+    // 0 = clean, GITLEAKS_FINDINGS_EXIT = findings. Anything else (including
+    // 1, a fatal error) means gitleaks itself failed and must not read as clean.
+    if (result.status !== 0 && result.status !== GITLEAKS_FINDINGS_EXIT) {
+      return gitleaksFailed(
+        `gitleaks exited ${result.status}: ${(result.stderr || "").trim() || "no stderr"}`,
+      );
+    }
+
+    const report = parseGitleaksReport({ status: result.status, report: readReport(reportPath) });
+    if (report.failure) return gitleaksFailed(report.failure);
+
+    return {
+      engine: "gitleaks",
+      available: true,
+      clean: report.findings.length === 0,
+      blocking: report.findings.length > 0,
+      findings: report.findings,
+      coverage: "full",
+      note: null,
+    };
+  } finally {
+    rmSync(reportDir, { recursive: true, force: true });
+  }
 }
 
 function scanWithFallback(diff) {
@@ -225,7 +272,7 @@ export function scanSecrets({
   return available ? scanWithGitleaks(diff.stdout, repoPath) : scanWithFallback(diff.stdout);
 }
 
-export { FALLBACK_PATTERNS };
+export { FALLBACK_PATTERNS, GITLEAKS_FINDINGS_EXIT };
 
 /**
  * Was this file run directly, rather than imported by a test?

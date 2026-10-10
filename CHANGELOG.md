@@ -23,6 +23,12 @@ All notable changes to this project are documented here. Versions follow
   having printed nothing. Both sides are realpath'd now, and the CLI has tests (one
   through a symlink) where before every test imported the module and never ran it.
 
+- `create-pr`: the gitleaks scan no longer blocks every clean branch on Linux. It wrote
+  its report to `/dev/stdout`, which is a socket under `spawnSync`, so gitleaks failed to
+  open it and exited 1, which the helper read as "found something". The report now goes
+  to a temp file, and gitleaks is run with `--exit-code 99` so a real finding can't be
+  confused with gitleaks crashing.
+
 ### Changed
 
 - `create-pr`: tighter PR descriptions. Notable Changes is opt-in (max 3 one-line

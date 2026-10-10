@@ -5,7 +5,12 @@ import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { scanSecrets, addedLines, parseGitleaksReport } from "../skills/create-pr/scan-secrets.mjs";
+import {
+  scanSecrets,
+  addedLines,
+  parseGitleaksReport,
+  GITLEAKS_FINDINGS_EXIT,
+} from "../skills/create-pr/scan-secrets.mjs";
 
 const SCRIPT = join(
   dirname(fileURLToPath(import.meta.url)),
@@ -177,31 +182,76 @@ describe("running the script (not importing it)", () => {
 
 // An unreadable report is not an empty findings list.
 describe("parseGitleaksReport", () => {
-  it("treats a run that wrote no report as a failure, not a pass", () => {
-    for (const status of [0, 1]) {
-      const report = parseGitleaksReport({ status, stdout: "   " });
-      expect(report.findings).toBeUndefined();
-      expect(report.failure).toMatch(/not a clean scan|findings are unknown/);
+  it("treats a missing or empty report as a failure, not a pass", () => {
+    for (const status of [0, GITLEAKS_FINDINGS_EXIT]) {
+      for (const report of [null, "   "]) {
+        const parsed = parseGitleaksReport({ status, report });
+        expect(parsed.findings).toBeUndefined();
+        expect(parsed.failure).toMatch(/not a clean scan|findings are unknown/);
+      }
     }
   });
 
   it("treats a malformed report as a failure, not a pass", () => {
-    expect(parseGitleaksReport({ status: 0, stdout: "{ nope" }).failure).toMatch(/not valid JSON/);
-    expect(parseGitleaksReport({ status: 1, stdout: '"a string"' }).failure).toMatch(
-      /expected an array/,
-    );
+    expect(parseGitleaksReport({ status: 0, report: "{ nope" }).failure).toMatch(/not valid JSON/);
+    expect(
+      parseGitleaksReport({ status: GITLEAKS_FINDINGS_EXIT, report: '"a string"' }).failure,
+    ).toMatch(/expected an array/);
+  });
+
+  it("treats a findings exit with an empty report as a failure", () => {
+    const parsed = parseGitleaksReport({ status: GITLEAKS_FINDINGS_EXIT, report: "[]" });
+    expect(parsed.findings).toBeUndefined();
+    expect(parsed.failure).toMatch(/contradictory/);
   });
 
   it("parses a real report into findings", () => {
     const report = parseGitleaksReport({
-      status: 1,
-      stdout: JSON.stringify([{ RuleID: "aws-access-token", Match: AWS_KEY, StartLine: 4 }]),
+      status: GITLEAKS_FINDINGS_EXIT,
+      report: JSON.stringify([{ RuleID: "aws-access-token", Match: AWS_KEY, StartLine: 4 }]),
     });
 
     expect(report.failure).toBeUndefined();
     expect(report.findings).toEqual([
       { rule: "aws-access-token", secret: "AKIAABCDEFGH...", line: 4 },
     ]);
-    expect(parseGitleaksReport({ status: 0, stdout: "[]" }).findings).toEqual([]);
+    expect(parseGitleaksReport({ status: 0, report: "[]" }).findings).toEqual([]);
+  });
+});
+
+// Regression: gitleaks was told to write its report to /dev/stdout. Under
+// spawnSync, stdout is a socket on Linux, opening /dev/stdout on it fails, and
+// gitleaks exited 1 before scanning, so every clean branch read as "findings
+// unknown". From a shell it worked, which is how it shipped. These run the
+// real spawnSync path against the installed binary, no mocks.
+const HAS_GITLEAKS = spawnSync("gitleaks", ["version"]).status === 0;
+if (!HAS_GITLEAKS) {
+  console.warn("Skipping real-gitleaks tests: gitleaks is not installed on this machine.");
+}
+
+describe.skipIf(!HAS_GITLEAKS)("real gitleaks through spawnSync (needs gitleaks installed)", () => {
+  it("scans a clean diff clean with full coverage", () => {
+    const result = withBranch({ "app.mjs": "export const x = 1;\n" }, (dir) =>
+      scanSecrets({ base: "main", repoPath: dir, gitleaksAvailable: true }),
+    );
+
+    expect(result).toMatchObject({
+      engine: "gitleaks",
+      clean: true,
+      blocking: false,
+      coverage: "full",
+      findings: [],
+    });
+  });
+
+  it("reports findings for a diff with an obvious fake secret", () => {
+    const result = withBranch({ "config.mjs": `const key = "${AWS_KEY}";\n` }, (dir) =>
+      scanSecrets({ base: "main", repoPath: dir, gitleaksAvailable: true }),
+    );
+
+    expect(result.engine).toBe("gitleaks");
+    expect(result.coverage).toBe("full");
+    expect(result.blocking).toBe(true);
+    expect(result.findings.length).toBeGreaterThan(0);
   });
 });
