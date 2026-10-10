@@ -10,8 +10,20 @@ All notable changes to this project are documented here. Versions follow
 - **Voice snippet** (`lib/voice.md`): shared Chat + Artifact voice rules, expanded by the
   installer into every skill's `## Voice` section via `{{SLYNK_VOICE}}`.
 
+### Fixed
+
+- `create-pr`: the secrets scan no longer reports clean when it never ran. `git diff |
+  gitleaks detect --pipe` exits 127 with empty stdout when gitleaks isn't installed, which
+  is indistinguishable from a clean scan, so Step 4 passed silently on any machine without
+  it. New `scan-secrets.mjs` separates clean (exit 0) from could-not-scan (exit 2), and the
+  pattern fallback always reports `coverage: "partial"`.
+
 ### Changed
 
+- `create-pr`: hard per-section caps on the PR description (30 words prose, 1 bullet /
+  15 words for Notable Changes, ~80-word body with no template). Notable Changes is now
+  outcomes only; the include/exclude table that invited a bullet per change is gone, and
+  test/coverage framing is banned from every section.
 - `slynk-spec`: slimmer Phase 3 plan format (one-line items, ~40-line target) and terser
   buildability-gate reports (blockers first, delta-only re-review rounds).
 - `slynk-spec-review`: the tone rubric is now the Voice section's Artifacts block; voice findings
