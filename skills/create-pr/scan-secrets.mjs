@@ -18,6 +18,7 @@
  */
 
 import { spawnSync } from "node:child_process";
+import { realpathSync } from "node:fs";
 import { resolve } from "node:path";
 
 /**
@@ -227,13 +228,18 @@ export function scanSecrets({
 export { FALLBACK_PATTERNS };
 
 /**
- * Was this file run directly? `argv[1]` stays unresolved through an agent's
- * install symlink, so a plain equality check would never fire on a normal
- * invocation.
+ * Was this file run directly, rather than imported by a test?
+ *
+ * Both sides get realpath'd. `process.argv[1]` is the path the user typed, which
+ * keeps every symlink in it; `import.meta.filename` is already resolved. Compare
+ * them lexically and any symlinked component (an agent's skills dir, a symlinked
+ * home, /tmp on macOS) makes them differ, the block below never runs, and the
+ * script exits 0 having printed nothing -- the exact silent pass this file
+ * exists to prevent. Resolving both also survives `--preserve-symlinks`.
  */
 function invokedDirectly() {
   try {
-    return resolve(process.argv[1]) === import.meta.filename;
+    return realpathSync(process.argv[1]) === realpathSync(import.meta.filename);
   } catch {
     return false;
   }

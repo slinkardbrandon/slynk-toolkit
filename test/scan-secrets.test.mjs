@@ -1,12 +1,23 @@
 import { describe, it, expect } from "vitest";
-import { execFileSync } from "node:child_process";
-import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
+import { execFileSync, spawnSync } from "node:child_process";
+import { mkdtempSync, writeFileSync, rmSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { scanSecrets, addedLines, parseGitleaksReport } from "../skills/create-pr/scan-secrets.mjs";
 
+const SCRIPT = join(
+  dirname(fileURLToPath(import.meta.url)),
+  "../skills/create-pr/scan-secrets.mjs",
+);
+
 const git = (dir, ...args) => execFileSync("git", args, { cwd: dir, encoding: "utf8" });
+
+const runScript = (scriptPath, repoPath, base = "main") =>
+  spawnSync(process.execPath, [scriptPath, "--base", base, "--repo", repoPath], {
+    encoding: "utf8",
+  });
 
 /** A throwaway repo with one commit on main and `files` added on a branch. */
 function withBranch(files, fn) {
@@ -122,6 +133,45 @@ describe("a missing scanner", () => {
     expect(addedLines("+++ b/a.mjs\n+const a = 1;\n-const b = 2;\n context\n")).toEqual([
       "const a = 1;",
     ]);
+  });
+});
+
+// The CLI entry point, which every other test bypasses by importing the module.
+// A guard regression is invisible to all of them.
+describe("running the script (not importing it)", () => {
+  it("prints a result when invoked by its real path", () => {
+    const out = withBranch({ "app.mjs": "export const x = 1;\n" }, (dir) => runScript(SCRIPT, dir));
+
+    expect(out.stdout.trim()).not.toBe("");
+    expect(JSON.parse(out.stdout)).toHaveProperty("coverage");
+  });
+
+  it("still prints a result when invoked through a symlink", () => {
+    // The guard compares argv[1] against import.meta.filename. Compared
+    // lexically, any symlinked component makes those differ, so the script
+    // exits 0 having printed nothing -- a silent pass, the exact failure this
+    // file exists to prevent. Agents install skills as symlinks, so this is a
+    // real invocation path, not a hypothetical.
+    const linkDir = mkdtempSync(join(tmpdir(), "scan-secrets-link-"));
+    try {
+      const link = join(linkDir, "scan-secrets.mjs");
+      symlinkSync(SCRIPT, link);
+
+      const out = withBranch({ "app.mjs": "export const x = 1;\n" }, (dir) => runScript(link, dir));
+
+      expect(out.stdout.trim()).not.toBe("");
+      expect(JSON.parse(out.stdout)).toHaveProperty("coverage");
+    } finally {
+      rmSync(linkDir, { recursive: true, force: true });
+    }
+  });
+
+  it("exits 2, never 0, when it could not scan", () => {
+    const out = withBranch({ "app.mjs": "x\n" }, (dir) =>
+      runScript(SCRIPT, dir, "origin/does-not-exist"),
+    );
+
+    expect(out.status).toBe(2);
   });
 });
 

@@ -564,14 +564,15 @@ git commit -m "chore: add change file"
 
 ### Step 7 -- Generate PR Description
 
-> **Short is the whole point.** The job is the ticket, what was done, and why it was
-> done that way, fast. If a line's place is unclear, cut it.
+> **Short is the whole point.** The job is what was done and why, fast. If a
+> line's place is unclear, cut it.
 
 Combine:
 
-1. **PR template** (if found in Step 1): keep its exact structure and headings, fill
-   every section. A template sets the format, not a license to write more -- the caps
-   below are per-section and apply whatever the template calls a section.
+1. **PR template** (if found in Step 1): keep its exact structure and headings,
+   fill every section. A template sets the format, not a license to write more --
+   the budget below binds every section, including ones a template or a calling
+   skill adds.
 2. **No template**: use the default structure below.
 
 **Default structure (also used to fill template sections):**
@@ -588,8 +589,8 @@ If What and Why collapse into one sentence, write one line and drop a heading.]
 
 ## Notable Changes
 
-[The feature(s) or bug fix(es) as outcomes. ONE bullet by default; 2-3 only if the
-PR genuinely spans that many. Cap: 15 words per bullet. Not a changelog.]
+[Optional. Max 3 one-line bullets, no nesting. Omit the whole section when
+nothing qualifies -- see below.]
 ```
 
 **If a ticket/issue reference is present,** add a link, sourced in this order:
@@ -599,35 +600,41 @@ PR genuinely spans that many. Cap: 15 words per bullet. Not a changelog.]
 3. Branch has a ticket key (`ABC-123`) and the template shows an issue-tracker URL pattern → follow that pattern.
 4. Otherwise omit -- do not invent a URL.
 
-**Caps (non-negotiable, per-section not a global budget):**
+**Budget:** the whole body, excluding links and generated blocks like
+screenshots, stays under ~15 lines.
 
-- Any prose section (What, Why, Description, Summary, Context): one sentence, 30 words.
-- Notable / Changes / Highlights: 1 bullet by default, 2-3 max, 15 words each.
-- Optional or non-applicable sections (rollback, screenshots, risk): fewest words
-  possible, or `N/A`. Never invent filler to make a section look complete.
-- No template: the whole body, minus the ticket link, lands around 80 words. That's
-  the target, not a ceiling to fill.
+- Any prose section (What, Why, Description, Summary, Context): one sentence,
+  30 words.
+- Any bullet section: max 3 one-line bullets, no nesting. Omit it when empty.
+- Notes/questions sections: only items needing a reviewer decision. Drop FYIs.
+- Non-applicable sections: `N/A`. Never invent filler to make a section look
+  complete.
+- A manual pre/post-merge step (infra apply, settings change) goes in a one-line
+  `> **Post-merge:**` callout at the top, not its own section.
 
-**Notable Changes -- what it is and isn't:**
+**Notable Changes -- what qualifies:** only what a reviewer could miss or get
+burned by in the diff.
 
-- Yes: the feature delivered or bug fixed, as an outcome. "Adds saved-quote recall
-  for returning users."
-- No: implementation details. No file names, function names, renames, refactors, or
-  "updated X to do Y" mechanics. Goals and broad strokes, not a teardown.
-- No: one bullet per change. Collapse related work into the outcome it serves.
+- Breaking or removed behavior
+- New config, env vars, or migrations
+- A cross-cutting behavior change not visible from the touched files
+
+Everything else is the diff's job: function names, file-by-file walkthroughs,
+tests added, refactors, docs updates. Never repeat What. When nothing clears that
+bar, omit the section -- a thin body means a small PR, which is fine.
 
 **Banned from every section:**
 
-- Anything about tests, test coverage, or testing strategy. Standard everywhere, zero
-  signal. No "added tests", no "maintains coverage", no test framing at all.
-- Lint fixes, formatting, no-behavior-change refactors, CI/build tweaks, comment-only
-  changes, dependency bumps that aren't the point of the PR.
-- AI tells: "This PR introduces...", "In this PR, I have...", bullet-point breakdowns
-  of the obvious, over-explained implementation.
+- Anything about tests, test coverage, or testing strategy, including a Test plan
+  section even if a template asks for one. Verification belongs in the tests, not
+  in the body.
+- Lint fixes, formatting, no-behavior-change refactors, CI/build tweaks,
+  comment-only changes, dependency bumps that aren't the point of the PR.
+- AI tells: "This PR introduces...", "In this PR, I have...", bullet-point
+  breakdowns of the obvious, over-explained implementation.
 
-**Tone:** senior engineer in Slack -- clear, direct, confident, first person. "Adds X
-so Y can Z." Never pad to fill a section; a thin section means a small PR, which is
-fine. No em-dashes.
+**Tone:** senior engineer in Slack -- clear, direct, confident, first person.
+"Adds X so Y can Z." Never pad to fill a section. No em-dashes.
 
 ---
 
