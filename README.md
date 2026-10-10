@@ -7,16 +7,17 @@ Code**, **GitHub Copilot CLI**, **OpenCode**, and **Codex** (experimental).
 ## Skills
 
 Skills are invoked as `slynk-brainstorm`, `slynk-spec`, `slynk-handoff`,
-`slynk-create-pr`, and `slynk-spec-review` across every runtime (the installer
+`slynk-create-pr`, `slynk-spec-review`, and `slynk-drift` across every runtime (the installer
 prefixes each so the name matches its dir).
 
-| Skill                               | What it does                                                                                                                                                 |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| [`brainstorm`](skills/brainstorm)   | Shapes a fuzzy idea into 2-3 approaches with tradeoffs, picks a direction, then continues into `slynk-spec` inline (or hands off a seed for a fresh session) |
-| [`spec`](skills/spec)               | Stress-tests a plan, explores the codebase, and emits a paste-ready resume prompt before non-trivial work                                                    |
-| [`handoff`](skills/handoff)         | Captures the session (code or planning) into a standalone doc and emits a paste-ready prompt that starts a fresh agent cold                                  |
-| [`create-pr`](skills/create-pr)     | Self-reviews a branch, runs the repo's real CI checks (derived from its config), and opens a PR (GitHub) or MR (GitLab) with a human-sounding description    |
-| [`spec-review`](skills/spec-review) | Judges whether a spec is buildable (a cold agent could implement it without guessing) and returns a PASS/BLOCKED verdict; `slynk-spec` fans it out as a gate |
+| Skill                               | What it does                                                                                                                                                                               |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [`brainstorm`](skills/brainstorm)   | Shapes a fuzzy idea into 2-3 approaches with tradeoffs, picks a direction, then continues into `slynk-spec` inline (or hands off a seed for a fresh session)                               |
+| [`spec`](skills/spec)               | Stress-tests a plan, explores the codebase, and emits a paste-ready resume prompt before non-trivial work                                                                                  |
+| [`handoff`](skills/handoff)         | Captures the session (code or planning) into a standalone doc and emits a paste-ready prompt that starts a fresh agent cold                                                                |
+| [`create-pr`](skills/create-pr)     | Self-reviews a branch, runs the repo's real CI checks (derived from its config), and opens a PR (GitHub) or MR (GitLab) with a human-sounding description                                  |
+| [`spec-review`](skills/spec-review) | Judges whether a spec is buildable (a cold agent could implement it without guessing) and returns a PASS/BLOCKED verdict; `slynk-spec` fans it out as a gate                               |
+| [`drift`](skills/drift)             | Detects doc drift: a deterministic checker for dead paths, scripts, links, and stale docs, plus LLM triage of the recent commit window; reports to one rolling tracking issue, never edits |
 
 ## Install
 
@@ -32,8 +33,7 @@ experimental), OpenCode (`~/.config/opencode`) -- and templates each skill's
 helper paths to absolute, so there's nothing to add to your `PATH`. A runtime is
 only touched if its config dir already exists.
 
-Then reload skills in your agent and invoke `slynk-brainstorm`, `slynk-spec`,
-`slynk-handoff`, or `slynk-create-pr`.
+Then reload skills in your agent and invoke any skill by its `slynk-` name.
 
 ```bash
 npx slynk-toolkit --uninstall   # remove the slynk-* skills again
@@ -64,6 +64,11 @@ block and leave your surrounding instructions intact.
 - **Node ≥18** (npx forces it; the skills ship dependency-free `.mjs` helpers).
 - For `spec`: a GitHub MCP server or the `gh` CLI to auto-fetch issues (optional).
 - For `create-pr`: the `gh` CLI (GitHub) or `glab` CLI (GitLab), authenticated.
+- For `drift`: `git`, plus an authenticated `gh` for the tracking issue (degrades without it).
+
+Skills that take repo config read one root file, `.slynk.yml`: see
+[docs/slynk-config.md](docs/slynk-config.md). Drift setup and scheduling:
+[docs/drift.md](docs/drift.md).
 
 See [docs/runtime-support.md](docs/runtime-support.md) for the per-runtime
 status and [docs/copilot-setup.md](docs/copilot-setup.md) for Copilot specifics.

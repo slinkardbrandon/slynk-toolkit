@@ -1,0 +1,7 @@
+{
+  "name": "drift-fixture",
+  "private": true,
+  "scripts": {
+    "build": "node src/index.js"
+  }
+}

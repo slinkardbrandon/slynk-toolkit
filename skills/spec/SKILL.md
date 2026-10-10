@@ -614,17 +614,18 @@ Rules for CONTEXT.md:
 
 ## Configuration
 
-The skill checks for a `.spec.yml` file at the repo root for overrides.
-All settings are optional -- sensible defaults are used if no config exists.
+The skill reads the `spec:` section of `.slynk.yml` at the repo root (the shared
+toolkit config; a legacy flat `.spec.yml` still works). All settings are optional.
 
 ```yaml
-# .spec.yml (all fields optional)
-output_dir:
-  docs/specs # where spec artifacts are saved
-  # default: docs/specs
-context_file:
-  CONTEXT.md # glossary file path (false to disable)
-  # default: CONTEXT.md
+# .slynk.yml (all fields optional)
+spec:
+  output_dir:
+    docs/specs # where spec artifacts are saved
+    # default: docs/specs
+  context_file:
+    CONTEXT.md # glossary file path (false to disable)
+    # default: CONTEXT.md
 ```
 
 If no config file exists, use defaults silently. Do not prompt the user to

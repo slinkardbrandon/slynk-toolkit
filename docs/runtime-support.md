@@ -46,7 +46,7 @@ capability, no separate matrix. With a primitive: ~3 perspective-diverse passes.
 Without one: degrades to a single inline `slynk-spec-review` pass, which still
 gates. `slynk-spec-review` run standalone is always one text-only pass.
 
-## Todo-list tool (`slynk-spec`, `slynk-create-pr`)
+## Todo-list tool (`slynk-spec`, `slynk-create-pr`, `slynk-drift`)
 
 These skills track their multi-step flow via the runtime's native task-list tool,
 gating on the tool they observe -- never a hardcoded name. Verified per-runtime
