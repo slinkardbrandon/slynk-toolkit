@@ -48,6 +48,23 @@ describe("parseSlynkYaml", () => {
     expect(parseSlynkYaml(MANIFEST.replaceAll("\n", "\r\n"))).toEqual(parseSlynkYaml(MANIFEST));
   });
 
+  it("parses block lists of scalars under an item key", () => {
+    const parsed = parseSlynkYaml(
+      "drift:\n  docs:\n    - path: A.md\n      claims:\n        - paths\n        - scripts\n      sources:\n      - src/\n    - path: B.md\n      sources: [lib/]\n",
+    );
+    expect(parsed.drift.docs).toEqual([
+      { path: "A.md", claims: ["paths", "scripts"], sources: ["src/"] },
+      { path: "B.md", sources: ["lib/"] },
+    ]);
+  });
+
+  it("reads an empty top-level key as a blank scalar, not a section", () => {
+    expect(parseSlynkYaml("output_dir:\ncontext_file:\n")).toEqual({
+      output_dir: "",
+      context_file: "",
+    });
+  });
+
   it("reads legacy flat top-level scalars", () => {
     expect(parseSlynkYaml("output_dir: specs\ncontext_file: false\n")).toEqual({
       output_dir: "specs",
@@ -75,6 +92,16 @@ describe("unified .slynk.yml config", () => {
     expect(readSpecConfig(repo).outputDir).toBe("specs/legacy");
   });
 
+  it("readSpecConfig defaults blank legacy keys instead of returning objects", () => {
+    writeFileSync(join(repo, ".spec.yml"), "output_dir:\ncontext_file:\n");
+    expect(readSpecConfig(repo)).toEqual({ outputDir: "docs/specs", contextFile: "CONTEXT.md" });
+  });
+
+  it("readSpecConfig falls back to defaults on a malformed .slynk.yml", () => {
+    writeFileSync(join(repo, ".slynk.yml"), "spec:\n  not yaml we parse\n");
+    expect(readSpecConfig(repo)).toEqual({ outputDir: "docs/specs", contextFile: "CONTEXT.md" });
+  });
+
   it("readSpecConfig falls back to .spec.yml when .slynk.yml has no spec: section", () => {
     writeFileSync(join(repo, ".slynk.yml"), "drift:\n  docs:\n    - path: README.md\n");
     writeFileSync(join(repo, ".spec.yml"), "output_dir: specs/legacy\n");
@@ -100,7 +127,10 @@ describe("unified .slynk.yml config", () => {
   });
 
   it("defaults the label and leaves notify null", () => {
-    writeFileSync(join(repo, ".slynk.yml"), "drift:\n  docs:\n    - path: README.md\n");
+    writeFileSync(
+      join(repo, ".slynk.yml"),
+      "drift:\n  docs:\n    - path: README.md\n      sources: [src/]\n",
+    );
     expect(readDriftConfig(repo)).toMatchObject({ label: "agent: drift", notify: null });
   });
 
@@ -111,10 +141,13 @@ describe("unified .slynk.yml config", () => {
   });
 
   const invalid = {
-    "claims + recency_only": "      claims: [paths]\n      recency_only: true\n",
+    "claims + recency_only":
+      "      sources: [src/]\n      claims: [paths]\n      recency_only: true\n",
     "absolute source": '      sources: ["/etc/"]\n',
     "dot-dot source": '      sources: ["../other/"]\n',
-    "unknown claim class": "      claims: [ports]\n",
+    "unknown claim class": "      sources: [src/]\n      claims: [ports]\n",
+    "missing sources": "      claims: [paths]\n",
+    "a line the parser can't place": "      sources: [src/]\n      just some text\n",
   };
   for (const [name, extra] of Object.entries(invalid)) {
     it(`rejects ${name} with a ConfigError`, () => {

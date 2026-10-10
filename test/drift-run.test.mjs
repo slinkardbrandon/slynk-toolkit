@@ -47,11 +47,19 @@ const ok = (stdout = "") => ({ status: 0, stdout, stderr: "" });
  * A fake `gh` driven by an in-memory tracking issue. Records every call so a
  * test can assert exactly which outward actions happened.
  */
-function fakeGh({ login = "brandon", issue = null, comments = [], authed = true } = {}) {
+function fakeGh({
+  login = "brandon",
+  issue = null,
+  comments = [],
+  authed = true,
+  failing = null,
+} = {}) {
   const state = { issue, comments: [...comments], calls: [], created: null };
   state.gh = (args, options = {}) => {
     state.calls.push(args);
     const [command, sub] = args;
+    if (failing && `${command} ${sub}` === failing)
+      return { status: 1, stdout: "", stderr: "boom" };
     if (command === "--version") return ok("gh version 2");
     if (command === "auth") return authed ? ok() : { status: 1, stdout: "", stderr: "no" };
     if (command === "api" && sub === "user") return ok(`${login}\n`);
@@ -242,6 +250,54 @@ describe("report", () => {
     });
     expect(fake.comments.at(-1).body).toContain("`` See `src/gone.js` for details. ``");
     expect(fake.comments.at(-1).body).toContain(String.raw`\|`);
+  });
+});
+
+describe("hardening", () => {
+  it("refuses a finding doc outside the manifest and posts nothing", async () => {
+    const repo = makeRepo();
+    writeFileSync(join(repo, "secret.txt"), "token=hunter2\n");
+    const fake = fakeGh({ issue: 3 });
+    for (const doc of ["secret.txt", "../../etc/passwd", "/etc/passwd"]) {
+      await expect(
+        deliverReport({
+          repoRoot: repo,
+          gh: fake.gh,
+          fetchImpl: fakeFetch().fetchImpl,
+          findings: [{ doc, line: 1, claim: "semantic", evidence: "x" }],
+        }),
+      ).rejects.toThrow(/not a manifest doc/);
+    }
+    expect(commentsOf(fake)).toHaveLength(0);
+  });
+
+  for (const failing of ["api user", "issue list", "issue view"]) {
+    it(`stops when gh ${failing} fails instead of treating it as empty`, async () => {
+      const repo = makeRepo();
+      const fake = fakeGh({ issue: 3, failing });
+      await expect(
+        deliverReport({
+          repoRoot: repo,
+          gh: fake.gh,
+          fetchImpl: fakeFetch().fetchImpl,
+          findings: [],
+        }),
+      ).rejects.toThrow(new RegExp(`gh ${failing} failed`));
+      expect(fake.created).toBeNull();
+      expect(commentsOf(fake)).toHaveLength(0);
+    });
+  }
+
+  it("ignores 8-hex spans inside a quoted doc line when counting resolved", async () => {
+    const repo = makeRepo();
+    writeFileSync(join(repo, "README.md"), "# Readme\n\nPinned at `3eca3a5f` and `src/gone.js`.\n");
+    git(repo, "commit", "-qam", "sha in doc");
+    const fake = fakeGh({ issue: 3 });
+    const fetchImpl = fakeFetch().fetchImpl;
+    await deliverReport({ repoRoot: repo, gh: fake.gh, fetchImpl, findings: finding(repo) });
+    git(repo, "commit", "-q", "--allow-empty", "-m", "next");
+    const second = await deliverReport({ repoRoot: repo, gh: fake.gh, fetchImpl, findings: [] });
+    expect(second.counts.resolved).toBe(1);
   });
 });
 

@@ -53,4 +53,5 @@ non-https `notify`, unknown claim class.
 ## Parser limits
 
 Dependency-free, so a YAML subset: top-level sections, scalar keys, inline lists (`[a, b]`),
-and block lists of flat maps. No nesting deeper than that, no anchors, no multi-line strings.
+block lists of scalars, and block lists of flat maps. No nesting deeper than that, no anchors,
+no multi-line strings. A line it can't place is a config error, never silently dropped.

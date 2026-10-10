@@ -24,7 +24,12 @@ import { devNull, tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { ConfigError, getRepoRoot, readDriftConfig } from "../slynk-mjs-utils/spec-config.mjs";
+import {
+  ConfigError,
+  getRepoRoot,
+  isGitWorkTree,
+  readDriftConfig,
+} from "../slynk-mjs-utils/spec-config.mjs";
 
 const SELF = fileURLToPath(import.meta.url);
 const BUNDLED_FIXTURE = path.join(path.dirname(SELF), "fixtures", "self-test");
@@ -468,7 +473,7 @@ function main() {
 
   if (spawnSync("git", ["--version"]).error) fail("git not found: drift-check needs git");
   const repoRoot = getRepoRoot();
-  if (!repoRoot) fail("not a git repository (pass --repo <path>)");
+  if (!repoRoot || !isGitWorkTree(repoRoot)) fail("not a git repository (pass --repo <path>)");
 
   let config;
   try {

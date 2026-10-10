@@ -117,7 +117,8 @@ Write the confirmed findings to a JSON file in a fresh temp dir with your file-w
 [{ "doc": "CLAUDE.md", "line": 48, "claim": "paths", "evidence": "path not tracked: packages/env" }]
 ```
 
-`claim` is the class (`paths`, `scripts`, `links`, `recency`, `semantic`). Empty array = clean.
+`claim` is the class (`paths`, `scripts`, `links`, `recency`, `semantic`). `doc` must be a
+manifest `path`; `report` rejects anything else. Empty array = clean.
 
 ## Step 5 -- Report
 

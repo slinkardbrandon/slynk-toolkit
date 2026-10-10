@@ -17,10 +17,11 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { execSync } from "node:child_process";
+import { execFileSync, execSync } from "node:child_process";
 
 // Repo root: explicit `--repo <path>` wins (lets tests drive a scratch repo),
-// else `git rev-parse`. Returns null outside a repo so callers degrade.
+// else `git rev-parse`. Returns null outside a repo so callers degrade. An
+// explicit `--repo` is not checked; git-backed callers use isGitWorkTree.
 export function getRepoRoot() {
   const argumentIndex = process.argv.indexOf("--repo");
   if (argumentIndex !== -1 && process.argv[argumentIndex + 1])
@@ -34,6 +35,20 @@ export function getRepoRoot() {
     }).trim();
   } catch {
     return null;
+  }
+}
+
+// True when `dir` is inside a git work tree. Guards `--repo` for helpers whose
+// results depend on the index (an empty one would silently skip every claim).
+export function isGitWorkTree(dir) {
+  try {
+    execFileSync("git", ["rev-parse", "--is-inside-work-tree"], {
+      cwd: dir,
+      stdio: ["ignore", "pipe", "ignore"],
+    });
+    return true;
+  } catch {
+    return false;
   }
 }
 
@@ -82,8 +97,10 @@ function parseValue(raw) {
 /**
  * Parse the subset of YAML `.slynk.yml` uses (no js-yaml dep): top-level
  * sections, scalar keys, inline flow lists, and block lists of flat maps whose
- * values are scalars or flow lists. Nothing deeper. Legacy flat `.spec.yml`
- * (top-level scalars only) parses too.
+ * values are scalars, flow lists, or block lists of scalars. Nothing deeper.
+ * Legacy flat `.spec.yml` (top-level scalars only) parses too. An empty
+ * top-level key with no body is "", not a section. Anything else inside a
+ * section throws ConfigError rather than being dropped silently.
  */
 export function parseSlynkYaml(text) {
   const root = {};
@@ -91,6 +108,19 @@ export function parseSlynkYaml(text) {
   let sectionIndent = null; // indent of that section's own keys
   let list = null; // the block list currently being filled
   let item = null; // the list item (flat map) currently being filled
+  let sectionKey = null; // the current section's top-level key
+  let pending = null; // { target, key, indent } of an item key awaiting `- scalar` lines
+
+  // A section key with no body is a blank scalar, matching the legacy reader.
+  const closeSection = () => {
+    if (section && Object.keys(section).length === 0) root[sectionKey] = "";
+  };
+  // An empty key starts out "" and becomes a list on its first `- scalar` line.
+  const setKey = (target, key, raw, indent) => {
+    const value = parseValue(raw);
+    target[key] = value;
+    pending = value === "" ? { target, key, indent } : null;
+  };
 
   // Split on CRLF or LF so a Windows-authored file doesn't leave a trailing \r
   // that defeats the line regexes (silently dropping every override).
@@ -102,10 +132,13 @@ export function parseSlynkYaml(text) {
     if (indent === 0) {
       const match = body.match(/^([\w-]+):\s*(.*)$/);
       if (!match) continue;
+      closeSection();
       list = null;
       item = null;
+      pending = null;
       if (match[2] === "" || match[2].startsWith("#")) {
         section = {};
+        sectionKey = match[1];
         sectionIndent = null;
         root[match[1]] = section;
       } else {
@@ -116,27 +149,45 @@ export function parseSlynkYaml(text) {
     }
     if (!section) continue;
 
-    const dash = body.match(/^-\s+([\w-]+):\s*(.*)$/);
-    if (dash && list) {
-      item = { [dash[1]]: parseValue(dash[2]) };
-      list.push(item);
-      continue;
+    const dash = body.match(/^-\s+(.*)$/);
+    if (dash) {
+      // A `- scalar` at or past an empty item key's indent belongs to that key.
+      if (pending && indent >= pending.indent) {
+        const { target, key } = pending;
+        if (!Array.isArray(target[key])) target[key] = [];
+        target[key].push(parseValue(dash[1]));
+        continue;
+      }
+      const entry = dash[1].match(/^([\w-]+):\s*(.*)$/);
+      if (list && entry) {
+        item = {};
+        list.push(item);
+        setKey(item, entry[1], entry[2], indent + 2);
+        continue;
+      }
+      if (list && !item) {
+        list.push(parseValue(dash[1]));
+        continue;
+      }
+      throw new ConfigError(`unsupported line in ${sectionKey}: "${body}"`);
     }
     const match = body.match(/^([\w-]+):\s*(.*)$/);
-    if (!match) continue;
+    if (!match) throw new ConfigError(`unsupported line in ${sectionKey}: "${body}"`);
     sectionIndent ??= indent;
     if (item && indent > sectionIndent) {
-      item[match[1]] = parseValue(match[2]);
+      setKey(item, match[1], match[2], indent);
     } else if (match[2] === "" || match[2].startsWith("#")) {
       list = [];
       item = null;
       section[match[1]] = list;
+      pending = null;
     } else {
       list = null;
       item = null;
-      section[match[1]] = parseValue(match[2]);
+      setKey(section, match[1], match[2], indent);
     }
   }
+  closeSection();
   return root;
 }
 
@@ -149,16 +200,28 @@ export function readSlynkConfig(repoRoot) {
 
 // Spec config: the `spec:` section of `.slynk.yml`, else legacy `.spec.yml`
 // (flat keys), else defaults. snake_case keys normalize to camelCase.
+// Spec config stays lenient (as before `.slynk.yml`): a malformed file or a
+// blank or non-scalar value falls back to the default instead of throwing.
 export function readSpecConfig(repoRoot) {
-  let config = readSlynkConfig(repoRoot)?.spec;
-  if (!config) {
-    const legacyPath = path.join(repoRoot, ".spec.yml");
-    if (!fs.existsSync(legacyPath)) return { ...DEFAULT_SPEC };
-    config = parseSlynkYaml(fs.readFileSync(legacyPath, "utf8"));
+  let config;
+  try {
+    config = readSlynkConfig(repoRoot)?.spec;
+    if (!config) {
+      const legacyPath = path.join(repoRoot, ".spec.yml");
+      if (!fs.existsSync(legacyPath)) return { ...DEFAULT_SPEC };
+      config = parseSlynkYaml(fs.readFileSync(legacyPath, "utf8"));
+    }
+  } catch (error) {
+    if (error instanceof ConfigError) return { ...DEFAULT_SPEC };
+    throw error;
   }
+  const { output_dir: outputDir, context_file: contextFile } = config;
   return {
-    outputDir: config.output_dir || DEFAULT_SPEC.outputDir,
-    contextFile: config.context_file ?? DEFAULT_SPEC.contextFile,
+    outputDir: typeof outputDir === "string" && outputDir ? outputDir : DEFAULT_SPEC.outputDir,
+    contextFile:
+      (typeof contextFile === "string" && contextFile) || typeof contextFile === "boolean"
+        ? contextFile
+        : DEFAULT_SPEC.contextFile,
   };
 }
 
@@ -209,6 +272,7 @@ export function readDriftConfig(repoRoot) {
       );
     }
     const sources = asList(entry.sources);
+    if (sources.length === 0) throw new ConfigError(`${where}: missing sources`);
     for (const source of sources) assertRepoRelative(source, `${where}.sources`);
 
     const recencyOnly = entry.recency_only === true;

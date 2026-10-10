@@ -25,11 +25,17 @@ import { mkdtempSync, readFileSync, realpathSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import { ConfigError, getRepoRoot, readDriftConfig } from "../slynk-mjs-utils/spec-config.mjs";
+import {
+  ConfigError,
+  getRepoRoot,
+  isGitWorkTree,
+  readDriftConfig,
+} from "../slynk-mjs-utils/spec-config.mjs";
 import { findingId, runSelfTest } from "./drift-check.mjs";
 
 const WATERMARK_LINE = /^Scanned through: ([0-9a-f]{7,40})$/;
-const FINDING_ID_TOKEN = /`([0-9a-f]{8})`/g;
+// Only the ID column (table row or open-list bullet), never a hex span inside a quote.
+const FINDING_ID_TOKEN = /^(?:\| |- )`([0-9a-f]{8})`/gm;
 const DEFAULT_SINCE = "7 days ago";
 const ISSUE_TITLE = "Doc drift tracking";
 const NO_GH_NOTICE = "no gh: watermark and tracking issue skipped";
@@ -76,11 +82,20 @@ function ghReady(gh) {
   return gh(["--version"]).status === 0 && gh(["auth", "status"]).status === 0;
 }
 
-function parseJson(text, fallback) {
+// A gh read that fails must stop the run: treating it as empty data would lose
+// the watermark, repost every finding as new, or file a duplicate tracking issue.
+function ghRead(gh, args, what) {
+  const result = gh(args);
+  if (result.status !== 0) throw new Error(`gh ${what} failed: ${result.stderr ?? ""}`.trim());
+  return result.stdout;
+}
+
+function ghJson(gh, args, what) {
   try {
-    return JSON.parse(text);
-  } catch {
-    return fallback;
+    return JSON.parse(ghRead(gh, args, what));
+  } catch (error) {
+    if (error instanceof SyntaxError) throw new Error(`gh ${what} returned invalid JSON`);
+    throw error;
   }
 }
 
@@ -89,6 +104,7 @@ export function gatherState({ repoRoot, gh, since = DEFAULT_SINCE }) {
   const config = readDriftConfig(repoRoot);
   if (!config) throw new ConfigError("no drift: section in .slynk.yml; run slynk-drift init");
   const head = git(repoRoot, ["rev-parse", "HEAD"]).stdout.trim();
+  if (!head) throw new Error("could not resolve HEAD (empty repo or not a git work tree)");
   const windowArgs = (watermark) =>
     watermark ? ["log", "--stat", `${watermark}..HEAD`] : ["log", "--stat", `--since=${since}`];
 
@@ -108,9 +124,11 @@ export function gatherState({ repoRoot, gh, since = DEFAULT_SINCE }) {
     };
   }
 
-  const login = gh(["api", "user", "--jq", ".login"]).stdout.trim();
-  const issues = parseJson(
-    gh([
+  const login = ghRead(gh, ["api", "user", "--jq", ".login"], "api user").trim();
+  if (!login) throw new Error("gh api user returned no login");
+  const issues = ghJson(
+    gh,
+    [
       "issue",
       "list",
       "--label",
@@ -121,12 +139,12 @@ export function gatherState({ repoRoot, gh, since = DEFAULT_SINCE }) {
       "number",
       "--limit",
       "1",
-    ]).stdout,
-    [],
+    ],
+    "issue list",
   );
   const issue = issues[0]?.number ?? null;
   const comments = issue
-    ? (parseJson(gh(["issue", "view", String(issue), "--json", "comments"]).stdout, {}).comments ??
+    ? (ghJson(gh, ["issue", "view", String(issue), "--json", "comments"], "issue view").comments ??
       [])
     : [];
   const trusted = trustedComments(
@@ -192,9 +210,18 @@ function formatComment({ fresh, open, resolved, head, notes, unsplit }) {
 }
 
 // Attach the verbatim doc line + stable ID to each agent-confirmed finding.
-function resolveFindings(repoRoot, findings) {
+// The findings file is agent-written, so `doc` must be a manifest doc: the
+// quoted line lands in a public comment, and an injected path would leak it.
+function resolveFindings(repoRoot, config, findings) {
+  const allowed = new Set(config.docs.map((entry) => path.posix.normalize(entry.path)));
   const byId = new Map();
   for (const finding of findings) {
+    if (typeof finding.doc !== "string" || !allowed.has(path.posix.normalize(finding.doc))) {
+      throw new Error(`finding doc "${finding.doc}" is not a manifest doc`);
+    }
+    if (!Number.isInteger(finding.line) || finding.line < 1) {
+      throw new Error(`${finding.doc}: line must be a positive integer, got ${finding.line}`);
+    }
     const lines = readFileSync(path.join(repoRoot, finding.doc), "utf8").split(/\r?\n/);
     const text = lines[finding.line - 1];
     if (text === undefined)
@@ -235,7 +262,7 @@ export async function deliverReport({ repoRoot, gh, fetchImpl = fetch, findings,
   const selfTest = runSelfTest();
   if (!selfTest.ok) return { error: selfTest.line };
 
-  const resolvedFindings = resolveFindings(repoRoot, findings);
+  const resolvedFindings = resolveFindings(repoRoot, state.config, findings);
 
   if (!state.gh) {
     const body = formatComment({
@@ -324,7 +351,7 @@ async function main() {
 
   if (spawnSync("git", ["--version"]).error) fail("git not found: slynk-drift needs git");
   const repoRoot = getRepoRoot();
-  if (!repoRoot) fail("not a git repository (pass --repo <path>)");
+  if (!repoRoot || !isGitWorkTree(repoRoot)) fail("not a git repository (pass --repo <path>)");
   const gh = realGh(repoRoot);
   const since = flag("since");
 

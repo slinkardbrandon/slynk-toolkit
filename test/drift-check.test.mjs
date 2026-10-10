@@ -235,6 +235,17 @@ describe("CLI", () => {
     expect(run(["--repo", repo, "--json"]).status).toBe(2);
   });
 
+  it("exits 2 when --repo is not a git work tree", () => {
+    const dir = mkdtempSync(join(tmpdir(), "drift-not-repo-"));
+    try {
+      const result = run(["--repo", dir, "--json"]);
+      expect(result.status).toBe(2);
+      expect(JSON.parse(result.stdout).error).toMatch(/not a git repository/);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it("exits 2 with init guidance when drift: is missing", () => {
     const repo = makeRepo({ "README.md": "" });
     const result = run(["--repo", repo, "--json"]);
