@@ -115,7 +115,7 @@ function run(selectedMode) {
   if (nudge.some((entry) => entry.kind === "skipped")) {
     console.log(
       "\nClaude hook skipped: settings.json did not parse. Add a SessionStart command running\n" +
-        '`node "<config>/slynk/bootstrap-hook.mjs"` by hand, or fix the JSON and re-run.',
+        '`"<absolute node path>" "<config>/slynk/bootstrap-hook.mjs"` by hand, or fix the JSON and re-run.',
     );
   }
 

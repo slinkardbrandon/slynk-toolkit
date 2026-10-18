@@ -371,6 +371,9 @@ describe("CC SessionStart hook (settings.json)", () => {
     expect(ours).toHaveLength(1);
     expect(ours[0].hooks[0]).toMatchObject({ type: "command", timeout: 10 });
     expect(ours[0].hooks[0].command).toContain("bootstrap-hook.mjs");
+    // Pins the absolute runtime, so CC without node on PATH still runs it.
+    const runtime = process.execPath.replaceAll("\\", "/");
+    expect(ours[0].hooks[0].command.startsWith(`"${runtime}" `)).toBe(true);
     expect(ours[0].matcher).toBeUndefined(); // fires on every session source
   });
 
