@@ -475,57 +475,80 @@ execution context, not a durable design record.
 
 Before emitting the resume prompt, gate on whether the **on-disk spec is
 buildable** -- could a cold agent implement it without guessing? This is a hard
-gate for you: **do not emit the resume prompt (5c) while the aggregate verdict is
+gate for you: **do not emit the resume prompt (5c) while the verdict is
 BLOCKED.** The user may override ("ship it anyway", "skip the gate"); you may not
 collapse it yourself. Mirrors brainstorm's gate and Phase 4's "just start
 implementing" -- agent-hard, user-collapsible.
 
-#### Fan out flavored reviewers
+#### Hand off to one fresh reviewer
 
-Each reviewer runs the `slynk-spec-review` skill (that exact installed name) on
-the spec you just wrote. Default **~3 reviewers** (edit this number here in source
-to change it). Make them perspective-diverse:
+One reviewer, not a fan-out. A single agent that has never seen this
+conversation is exactly as uncontaminated as three, and three cost three times
+as much for lens diversity this gate is not actually for.
 
-- **One baseline** pass always (no flavor).
-- **1-2 work-relevant flavors** you derive from the spec content + the work
-  classification -- e.g. an installer/CLI spec -> `cross-platform` + `security`; a
-  UI spec -> `design` + `a11y`; a data-path spec -> `perf`. Flavors are
-  open-ended, not an enum -- pick what the spec's subject warrants. Diversity
-  catches failure modes N identical passes can't.
+Spawn **one** agent and have it run the `slynk-spec-review` skill (that exact
+installed name) on the spec you just wrote. Invoke as:
+`slynk-spec-review <spec-path>`.
 
-Invoke each as: `slynk-spec-review <spec-path> "<flavor>"` (omit the flavor for
-the baseline reviewer). Tell each fanned reviewer to **return only its verdict
-block** -- you own the revise loop, not them.
+If your harness offers a read-only or restricted agent type, use it. The
+reviewer reads a spec and returns prose; it has no reason to hold a write tool
+or a network client.
+
+**Hand it the context; do not make it go find things.** Every tool call the
+reviewer makes re-reads its whole accumulated context, so discovery is the
+expensive part, not the judgment. In the spawn prompt, inline:
+
+- The spec's path, and the ticket or requirement text the spec is meant to
+  satisfy (paste it -- do not tell the agent to fetch the ticket).
+- The behavior list from Phase 5a, verbatim.
+- Paths to the test files or test plan that already exist, if any.
+- What you have already ruled out, so it does not re-investigate it.
+
+Tell it explicitly: read the spec, read any test files you named, and answer.
+No ticket fetches, no repo-wide exploration, no web calls.
+
+**The three questions this gate exists to answer**, in priority order. Put them
+in the spawn prompt verbatim:
+
+1. **Cold-build**: could an agent with no prior context implement this spec
+   without guessing? Name every place it would have to guess.
+2. **Test intent**: do the specified tests actually verify the behavior the
+   requirement asks for, or do they assert implementation detail and pass
+   vacuously? A test that cannot fail for the right reason is a blocking
+   finding.
+3. **TDD order**: is the behavior list sequenced so each item can be driven
+   red-green-refactor on its own, or do items presuppose code that a later item
+   is supposed to introduce?
+
+Tell the reviewer to **return only its verdict block** -- you own the revise
+loop, not it.
 
 **Capability gating:** gate on the subagent primitive you actually observe in
 your tool list, not the runtime brand -- reuse brainstorm's Phase 2a table
 (`docs/runtime-support.md`); no separate matrix here.
 
-**No subagent primitive -> degrade to one inline `slynk-spec-review` pass** as the
-floor (baseline lenses, no flavor). One pass still gates; you just lose the
-perspective diversity. The gate never silently disappears.
+**No subagent primitive -> run the same single `slynk-spec-review` pass
+inline.** You lose the fresh context, which is the point of the gate, so say so
+in the report. The gate never silently disappears.
 
-#### Synthesize the verdicts
+#### Read the verdict
 
-Collect each reviewer's verdict block and aggregate:
-
-- **Aggregate BLOCKED iff any reviewer reported a blocking finding** (dedupe
-  findings that overlap across lenses -- same place, same root cause = one).
-  Otherwise aggregate PASS.
-- Group the deduped findings: blockers first, one line each; nits last, shorter
-  than blockers, expanded on request. Each keeps its `[lens]` tag so the user
-  sees which perspective raised it.
+- **BLOCKED iff the reviewer reported a blocking finding.** Otherwise PASS.
+- Group the findings: blockers first, one line each; nits last, shorter than
+  blockers, expanded on request. Tag any finding that came from one of the three
+  questions above (`[cold-build]`, `[test-intent]`, `[tdd-order]`) so the user
+  sees which one raised it.
 
 #### Report + revise loop
 
 Never silent-edit the spec -- it's the user's artifact.
 
-> Reviewed the spec across N lenses. Aggregate: BLOCKED -- 2 blocking, 3 nits:
+> Reviewed the spec in a fresh context. BLOCKED -- 2 blocking, 3 nits:
 > [grouped findings]. Want me to revise the spec to clear the blockers, then
 > re-review?
 
-- **Revise** -> edit the on-disk spec, re-run the fan-out on the updated spec,
-  re-aggregate. From round 2, report only cleared / new / still-open findings.
+- **Revise** -> edit the on-disk spec, re-run the single reviewer on the
+  updated spec. From round 2, report only cleared / new / still-open findings.
   Loop until PASS or the user overrides.
 - **Override** ("ship it anyway") -> proceed to 5c despite BLOCKED; note in the
   handoff that the gate was overridden.

@@ -5,8 +5,8 @@ description: >-
   guessing? One deep pass over a single spec, returning a structured PASS/BLOCKED
   verdict with severity-grouped, lens-tagged findings. Takes an optional lens
   flavor (security, cross-platform, design, perf, a11y, ...) that biases the pass
-  on top of the baseline rubric. Run it when pointed at a spec, or as the pass a
-  caller (slynk-spec's buildability gate) fans out. Not for intent-fit (does the
+  on top of the baseline rubric. Run it when pointed at a spec, or as the single
+  pass slynk-spec's buildability gate hands off to. Not for intent-fit (does the
   design solve the ticket? -- that's the machine-local review-spec, a different
   skill; do not conflate). Not a fuzzy-idea entry point -- slynk-brainstorm and
   slynk-spec shape and write specs; this only judges one that already exists.
@@ -19,7 +19,7 @@ Review one spec for **buildability** -- whether a cold agent could implement it
 without guessing -- and return a structured verdict. Judge the artifact's
 quality, not whether the design fits intent (that's `review-spec`, a different
 skill). Assume the direction is set; ask only whether the document is buildable
-as written. One pass, one verdict -- a caller fans out and aggregates, not you.
+as written. One pass, one verdict -- the caller owns the revise loop, not you.
 
 </what-to-do>
 
