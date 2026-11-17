@@ -39,6 +39,14 @@ All notable changes to this project are documented here. Versions follow
 
 ### Changed
 
+- **spec** buildability gate (Phase 5b) hands off to **one** fresh reviewer instead of fanning
+  out ~3 flavored ones. One agent that has never seen the conversation is as uncontaminated as
+  three, and the gate's job is buildability, not lens diversity. The spawn prompt now carries the
+  spec path, the requirement text, the behavior list and test paths inline, and tells the reviewer
+  not to fetch tickets or explore the repo, since each of its tool calls re-reads its whole
+  context. Adds three explicit questions in priority order: cold-build, test-intent, TDD-order.
+  `slynk-spec-review` is unchanged and still takes an optional lens flavor for standalone use.
+
 - `create-pr`: tighter PR descriptions. Notable Changes is opt-in (max 3 one-line
   bullets, omitted when nothing a reviewer could get burned by qualifies), the body
   budget is ~15 lines and binds sections a template or calling skill adds, notes
